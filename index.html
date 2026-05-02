@@ -8,7 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-gradient: linear-gradient(180deg, #fceadd 0%, #f7b4b6 50%, #e08b98 100%);
+            /* Updated to a blue-to-whitish-blue gradient */
+            --bg-gradient: linear-gradient(180deg, #60a5fa 0%, #bae6fd 50%, #e0f2fe 100%);
             --panel-bg: rgba(30, 30, 30, 0.95);
             --panel-header: rgba(50, 50, 50, 0.9);
             --button-brown: #5d4444;
@@ -29,7 +30,7 @@
             flex-direction: column;
         }
 
-        /* Navigation (Styled like the Robux Shop tabs) */
+        /* Navigation */
         nav {
             background-color: var(--panel-header);
             padding: 15px 0;
@@ -40,29 +41,28 @@
             z-index: 100;
         }
 
-        nav button {
-            background: none;
-            border: none;
+        nav a {
+            text-decoration: none;
             color: #ccc;
             font-family: 'Fredoka', sans-serif;
             font-size: 20px;
             font-weight: 600;
             margin: 0 15px;
-            cursor: pointer;
             padding-bottom: 5px;
             position: relative;
             transition: color 0.2s;
+            display: inline-block;
         }
 
-        nav button:hover {
+        nav a:hover {
             color: white;
         }
 
-        nav button.active {
+        nav a.active {
             color: white;
         }
 
-        nav button.active::after {
+        nav a.active::after {
             content: '';
             position: absolute;
             bottom: 0;
@@ -117,15 +117,10 @@
             padding: 20px;
         }
 
-        .text-outline {
-            -webkit-text-stroke: 2px var(--text-dark-outline);
-            paint-order: stroke fill;
-        }
-
         /* Play Page Styles */
         #play {
             text-align: center;
-            display: flex; /* overridden by JS, but handled in class */
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -138,25 +133,43 @@
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
 
+        /* Title Layering to fix outline overlap */
+        .title-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 0 0 40px 0;
+        }
+
         .game-title {
             font-size: 64px;
             font-weight: 700;
-            margin: 0 0 40px 0;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        /* The stroke layer sits behind */
+        .game-title.stroke-layer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            -webkit-text-stroke: 6px var(--text-dark-outline);
+            z-index: 1;
             color: white;
-            text-shadow: 0 4px 4px rgba(0,0,0,0.3);
-            -webkit-text-stroke: 3px var(--text-dark-outline);
+            text-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+
+        /* The fill layer sits on top, covering the inner half of the stroke */
+        .game-title.fill-layer {
+            position: relative;
+            z-index: 2;
+            color: white;
         }
 
         .gradient-text {
             background: linear-gradient(90deg, #00bfff, #9d00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            /* Filter outline hack for gradient text */
-            filter: drop-shadow(2px 0 0 var(--text-dark-outline)) 
-                    drop-shadow(-2px 0 0 var(--text-dark-outline)) 
-                    drop-shadow(0 2px 0 var(--text-dark-outline)) 
-                    drop-shadow(0 -2px 0 var(--text-dark-outline));
-            display: inline-block;
         }
 
         .btn-roblox {
@@ -306,7 +319,7 @@
         }
 
         .btn-discord {
-            background-color: #5865F2; /* Discord Blurple */
+            background-color: #5865F2;
             color: white;
             text-decoration: none;
             padding: 15px 30px;
@@ -329,16 +342,21 @@
 <body>
 
     <nav>
-        <button class="active" onclick="showPage('play')">Play</button>
-        <button onclick="showPage('rules')">Game Rules</button>
-        <button onclick="showPage('updates')">Updates</button>
-        <button onclick="showPage('community')">Community</button>
+        <a href="#play" class="nav-link">Play</a>
+        <a href="#rules" class="nav-link">Game Rules</a>
+        <a href="#updates" class="nav-link">Updates</a>
+        <a href="#community" class="nav-link">Community</a>
     </nav>
 
-    <main id="play" class="page active" style="display: flex;">
+    <main id="play" class="page">
         <img src="favicon.png" alt="Build Island Logo" class="main-logo" onerror="this.style.display='none'">
-        <h1 class="game-title">Build Island <span class="gradient-text">Reborn</span></h1>
         
+        <div class="title-wrapper">
+            <h1 class="game-title stroke-layer">Build Island <span class="gradient-text">Reborn</span></h1>
+            <h1 class="game-title fill-layer">Build Island <span class="gradient-text">Reborn</span></h1>
+        </div>
+        
+        <br>
         <a href="https://www.roblox.com/games/122517558607766" target="_blank" class="btn-roblox">Join</a>
     </main>
 
@@ -472,30 +490,45 @@
     </div>
 
     <script>
-        // --- Navigation Logic ---
-        function showPage(pageId) {
+        // --- Hash Navigation Logic ---
+        function handleRouting() {
+            // Get the hash without the '#' (default to 'play' if empty)
+            let currentHash = window.location.hash.substring(1) || 'play';
+            
             // Hide all pages
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
-                if (page.id === 'play') page.style.display = 'none';
+                if(page.id === 'play') page.style.display = 'none';
             });
             
-            // Remove active class from buttons
-            document.querySelectorAll('nav button').forEach(btn => {
-                btn.classList.remove('active');
+            // Remove active class from all links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
             });
 
-            // Show selected page
-            const selectedPage = document.getElementById(pageId);
-            selectedPage.classList.add('active');
-            if (pageId === 'play') selectedPage.style.display = 'flex'; // maintain centering
-            
-            // Highlight button
-            event.target.classList.add('active');
+            // Show target page
+            const targetPage = document.getElementById(currentHash);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                if (currentHash === 'play') targetPage.style.display = 'flex'; // maintain flex centering
+                
+                // Highlight matching nav link
+                const targetLink = document.querySelector(`.nav-link[href="#${currentHash}"]`);
+                if(targetLink) targetLink.classList.add('active');
+            } else {
+                // Fallback to play if URL hash is invalid
+                document.getElementById('play').classList.add('active');
+                document.getElementById('play').style.display = 'flex';
+                document.querySelector(`.nav-link[href="#play"]`).classList.add('active');
+            }
         }
 
+        // Listen for URL changes and run on initial load
+        window.addEventListener('hashchange', handleRouting);
+        window.addEventListener('DOMContentLoaded', handleRouting);
+
+
         // --- Updates Logic ---
-        // You can easily modify this array to add/remove updates!
         const updatesData = [
             {
                 title: "Quality of Life Update",
@@ -516,7 +549,6 @@
 
         const updatesContainer = document.getElementById('updates-container');
 
-        // Render updates cards
         updatesData.forEach((update, index) => {
             const card = document.createElement('div');
             card.className = 'update-card';
@@ -542,7 +574,6 @@
             modal.style.display = 'none';
         }
 
-        // Close modal if clicking outside the window
         window.onclick = function(event) {
             if (event.target == modal) {
                 closeModal();
