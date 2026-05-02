@@ -1,466 +1,553 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Build Island Reborn</title>
-  <link rel="icon" href="favicon.png" type="image/png" />
-  <meta name="description" content="Build Island Reborn — the community-built sandbox game by Saintfire. Build, wire, and share your world." />
-  <meta property="og:title" content="Build Island Reborn" />
-  <meta property="og:description" content="The Build Island successor that actually works. Open servers, wiring, moderation, and frequent updates." />
-  <meta property="og:image" content="bir.png" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Island Reborn</title>
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(180deg, #fceadd 0%, #f7b4b6 50%, #e08b98 100%);
+            --panel-bg: rgba(30, 30, 30, 0.95);
+            --panel-header: rgba(50, 50, 50, 0.9);
+            --button-brown: #5d4444;
+            --text-dark-outline: #4a4a4a;
+            --green-accent: #2dc937;
+            --blue-accent: #00aaff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation (Styled like the Robux Shop tabs) */
+        nav {
+            background-color: var(--panel-header);
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 15px;
+            cursor: pointer;
+            padding-bottom: 5px;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        nav button:hover {
+            color: white;
+        }
+
+        nav button.active {
+            color: white;
+        }
+
+        nav button.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: white;
+            border-radius: 2px;
+        }
+
+        /* Page Container */
+        .page {
+            display: none;
+            padding: 40px 20px;
+            flex: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Reusable UI Elements */
+        .window-panel {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .window-header {
+            background-color: var(--panel-header);
+            padding: 15px 20px;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid #111;
+        }
+
+        .window-content {
+            padding: 20px;
+        }
+
+        .text-outline {
+            -webkit-text-stroke: 2px var(--text-dark-outline);
+            paint-order: stroke fill;
+        }
+
+        /* Play Page Styles */
+        #play {
+            text-align: center;
+            display: flex; /* overridden by JS, but handled in class */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 70vh;
+        }
+
+        .main-logo {
+            width: 150px;
+            margin-bottom: -10px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .game-title {
+            font-size: 64px;
+            font-weight: 700;
+            margin: 0 0 40px 0;
+            color: white;
+            text-shadow: 0 4px 4px rgba(0,0,0,0.3);
+            -webkit-text-stroke: 3px var(--text-dark-outline);
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #00bfff, #9d00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            /* Filter outline hack for gradient text */
+            filter: drop-shadow(2px 0 0 var(--text-dark-outline)) 
+                    drop-shadow(-2px 0 0 var(--text-dark-outline)) 
+                    drop-shadow(0 2px 0 var(--text-dark-outline)) 
+                    drop-shadow(0 -2px 0 var(--text-dark-outline));
+            display: inline-block;
+        }
+
+        .btn-roblox {
+            background-color: var(--button-brown);
+            border: none;
+            border-radius: 4px;
+            padding: 15px 50px;
+            font-size: 32px;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            color: var(--green-accent);
+            -webkit-text-stroke: 1.5px var(--text-dark-outline);
+            transition: transform 0.1s, filter 0.1s;
+            box-shadow: 0 4px 0px #3d2c2c;
+        }
+
+        .btn-roblox:hover {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0px #3d2c2c;
+            filter: brightness(1.1);
+        }
+
+        /* Rules Page Styles */
+        .rule-section {
+            background-color: black;
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .rule-section h2 {
+            margin-top: 0;
+            color: #ddd;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .rule-section h3 {
+            color: var(--blue-accent);
+            margin-bottom: 5px;
+        }
+
+        .rule-section ul {
+            margin: 0 0 10px 0;
+            padding-left: 20px;
+            color: #bbb;
+        }
+
+        .action-result {
+            font-weight: bold;
+            color: #ff4d4d;
+        }
+        
+        .action-none {
+            color: var(--green-accent);
+        }
+
+        blockquote {
+            border-left: 4px solid var(--blue-accent);
+            margin: 0 0 15px 0;
+            padding-left: 10px;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        /* Updates Page Styles */
+        .updates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .update-card {
+            background-color: black;
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 20px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .update-card:hover {
+            border-color: var(--blue-accent);
+        }
+
+        .update-date {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .update-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            margin: 0;
+        }
+
+        /* Modal for Updates */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            background: #ff4d4d;
+            border: 2px solid #aa0000;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            float: right;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+        }
+
+        /* Community Page */
+        .community-box {
+            text-align: center;
+            padding: 50px 20px;
+            background-color: black;
+            border: 2px solid #333;
+            border-radius: 6px;
+        }
+
+        .stamp-icon {
+            width: 80px;
+            margin-bottom: 20px;
+        }
+
+        .btn-discord {
+            background-color: #5865F2; /* Discord Blurple */
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 24px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 20px;
+            border: 2px solid #404eed;
+            box-shadow: 0 4px 0px #2f3ab3;
+        }
+        
+        .btn-discord:hover {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0px #2f3ab3;
+        }
+
+    </style>
 </head>
 <body>
 
-  <!-- Ambient glows -->
-  <div class="glow-blob blue"></div>
-  <div class="glow-blob purple"></div>
-  <div class="glow-blob cyan"></div>
+    <nav>
+        <button class="active" onclick="showPage('play')">Play</button>
+        <button onclick="showPage('rules')">Game Rules</button>
+        <button onclick="showPage('updates')">Updates</button>
+        <button onclick="showPage('community')">Community</button>
+    </nav>
 
-  <!-- ── Navigation ──────────────────────────────────────────────────────── -->
-  <nav>
-    <a class="nav-logo" href="#" onclick="showPage('home')">
-      <img src="bir.png" alt="Build Island Reborn" />
-    </a>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="#" class="active" data-page="home"      onclick="showPage('home');      return false;">Home</a></li>
-      <li><a href="#" data-page="features"  onclick="showPage('features');  return false;">Features</a></li>
-      <li><a href="#" data-page="community" onclick="showPage('community'); return false;">Community</a></li>
-      <li><a href="https://www.roblox.com/games/75337181865376" target="_blank" class="nav-play">▶ Play Free</a></li>
-    </ul>
-  </nav>
+    <main id="play" class="page active" style="display: flex;">
+        <img src="favicon.png" alt="Build Island Logo" class="main-logo" onerror="this.style.display='none'">
+        <h1 class="game-title">Build Island <span class="gradient-text">Reborn</span></h1>
+        
+        <a href="https://www.roblox.com/games/122517558607766" target="_blank" class="btn-roblox">Join</a>
+    </main>
 
-  <!-- ════════════════════════════════════════════════════════════════════════
-       HOME PAGE
-  ════════════════════════════════════════════════════════════════════════ -->
-  <div class="page active" id="page-home">
+    <main id="rules" class="page">
+        <div class="window-panel">
+            <div class="window-header">
+                🛡️ Server Admin - Game Rules
+            </div>
+            <div class="window-content">
+                
+                <div class="rule-section">
+                    <h2>1. Griefing</h2>
+                    <p>Griefing or promoting the act of griefing is strictly prohibited.</p>
+                    <blockquote>"to grief": to ruin other players' experiences.</blockquote>
+                    
+                    <h3>Minor Griefing</h3>
+                    <ul>
+                        <li>Building on top of everyone's builds in the server</li>
+                        <li>Putting spikes around the spawn area</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result action-none">None</span> <em>(can be prevented by server owners)</em></p>
 
-    <!-- Hero -->
-    <div class="hero">
-      <img class="hero-logo" src="bir.png" alt="Build Island Reborn" />
-      <p class="hero-tagline">
-        The sandbox building game that actually gets maintained.<br>
-        Open servers, wiring, moderation, and updates that happen.
-      </p>
-      <div class="hero-buttons">
-        <a class="btn btn-primary" href="https://www.roblox.com/games/75337181865376" target="_blank">
-          ▶ &nbsp;Play on Roblox
-        </a>
-        <a class="btn btn-secondary" href="#" onclick="showPage('features'); return false;">
-          See Features
-        </a>
-        <a class="btn btn-discord" href="https://discord.gg/your-invite" target="_blank">
-          💬 &nbsp;Join Discord
-        </a>
-      </div>
+                    <h3>Standard Griefing</h3>
+                    <ul>
+                        <li>A build that kills all players upon spawning (e.g., Teleport Traps, Microwaves)</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result">14d ban</span></p>
 
-      <!-- Stats -->
-      <div class="stats-bar reveal">
-        <div class="stat">
-          <span class="stat-value">21+</span>
-          <span class="stat-label">Peak Players</span>
+                    <h3>Major Griefing</h3>
+                    <ul>
+                        <li>Any build that makes the server unplayable (e.g., server crashers, laggers)</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result">Permanent ban</span></p>
+                </div>
+
+                <div class="rule-section">
+                    <h2>2. NSFW</h2>
+                    <h3>Minor Breakage</h3>
+                    <ul>
+                        <li>An upside down T</li>
+                        <li>A build slightly suggestive</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result">3d ban</span></p>
+
+                    <h3>Major Breakage</h3>
+                    <ul>
+                        <li>Building a detailed NSFW build</li>
+                        <li>Playing NSFW audios</li>
+                        <li>Hosting servers dedicated to showing NSFW</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result">Permanent ban</span></p>
+                </div>
+
+                <div class="rule-section">
+                    <h2>3. Exploiting</h2>
+                    <h3>Minor Breakage</h3>
+                    <ul>
+                        <li>Using third party tools for little to no advantage in the game</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result action-none">None</span></p>
+
+                    <h3>Major Breakage</h3>
+                    <ul>
+                        <li>Using executors to inject code into the game to grief servers (e.g., flinging everyone)</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result">Permanent ban</span></p>
+                </div>
+
+                <div class="rule-section">
+                    <h2>4. Destructively abusing glitches</h2>
+                    <ul>
+                        <li>E.g., abusing a glitch to be able to kick/ban moderators from your server</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result">7d ban</span> → <span class="action-result">Permanent on 2nd offense</span></p>
+                </div>
+
+                <div class="rule-section">
+                    <h2>5. Degrading the game's reputation</h2>
+                    <ul>
+                        <li>Criticism is allowed, as long as it isn't destructive and makes others not want to play the game (e.g., spreading misinformation)</li>
+                    </ul>
+                    <p>Result of Action: <span class="action-result">Permanent ban</span></p>
+                </div>
+
+                <div class="rule-section">
+                    <h2>6. Roblox TOS</h2>
+                    <ul>
+                        <li>Follow Roblox TOS at all times</li>
+                    </ul>
+                </div>
+
+            </div>
         </div>
-        <div class="stat">
-          <span class="stat-value">Free</span>
-          <span class="stat-label">To Play</span>
+    </main>
+
+    <main id="updates" class="page">
+        <div class="window-panel">
+            <div class="window-header">
+                📝 Update Log
+            </div>
+            <div class="window-content updates-grid" id="updates-container">
+                </div>
         </div>
-        <div class="stat">
-          <span class="stat-value">Weekly</span>
-          <span class="stat-label">Updates</span>
+    </main>
+
+    <main id="community" class="page">
+        <div class="window-panel">
+            <div class="window-header">
+                🌍 Community Hub
+            </div>
+            <div class="window-content community-box">
+                <img src="stamp.png" alt="Stamp" class="stamp-icon" onerror="this.style.display='none'">
+                <h2 style="margin: 0; font-size: 36px;">Join the Conversation!</h2>
+                <p style="color: #ccc; font-size: 18px;">Share your builds, report bugs, and chat with other creators.</p>
+                <a href="https://discord.gg/jXd7CaWRyq" target="_blank" class="btn-discord">Join our Discord</a>
+            </div>
         </div>
-        <div class="stat">
-          <span class="stat-value">0</span>
-          <span class="stat-label">Group Required</span>
+    </main>
+
+    <div class="modal-overlay" id="update-modal">
+        <div class="window-panel modal-content">
+            <div class="window-header">
+                <span id="modal-title">Update Title</span>
+                <button class="modal-close" onclick="closeModal()">X</button>
+            </div>
+            <div class="window-content" style="background: black; padding: 20px;">
+                <p id="modal-date" style="color: #888; font-size: 14px; margin-top: 0;"></p>
+                <div id="modal-body" style="color: #ddd; line-height: 1.6;"></div>
+            </div>
         </div>
-      </div>
     </div>
 
-    <!-- About section -->
-    <section>
-      <p class="section-title reveal">What is <span>Build Island Reborn?</span></p>
-      <p class="section-sub reveal">Build Island got shut down. Bild Iland appeared but you had to join their group just to play and the mod team was corrupt. So Saintfire built something better.</p>
+    <script>
+        // --- Navigation Logic ---
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+                if (page.id === 'play') page.style.display = 'none';
+            });
+            
+            // Remove active class from buttons
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('active');
+            });
 
-      <div class="about-grid">
-        <div class="about-card reveal">
-          <span class="about-card-icon">🏝️</span>
-          <h3>Open Servers</h3>
-          <p>No group required. Open a beacon, share your server with the world, and let anyone join. Just like the original Build Island was always meant to be.</p>
-        </div>
-        <div class="about-card reveal">
-          <span class="about-card-icon">🛡️</span>
-          <h3>Real Moderation</h3>
-          <p>Build logs, trusted ranks, vote kick, and an anti-grief system that actually works. The chaos that killed the original Build Island won't happen here.</p>
-        </div>
-        <div class="about-card reveal">
-          <span class="about-card-icon">🔧</span>
-          <h3>Actively Updated</h3>
-          <p>New features, bug fixes, and improvements ship regularly. Not once a year. Not never. A game that's actually being looked after.</p>
-        </div>
-        <div class="about-card reveal">
-          <span class="about-card-icon">⚡</span>
-          <h3>Wiring System</h3>
-          <p>Connect blocks together to build machines, traps, vehicles, games within games. The wiring system lets your builds actually do things.</p>
-        </div>
-        <div class="about-card reveal">
-          <span class="about-card-icon">💰</span>
-          <h3>Stamps Currency</h3>
-          <p>Earn Stamps just by playing. Spend them on server boosts, save slots, and cosmetics. A global economy built into the game from day one.</p>
-        </div>
-        <div class="about-card reveal">
-          <span class="about-card-icon">📦</span>
-          <h3>Modkits & Imports</h3>
-          <p>Import community modkits to add hundreds of new blocks, weapons, gear, and tools to your server. Supports saving your Bild Iland builds.</p>
-        </div>
-      </div>
-    </section>
+            // Show selected page
+            const selectedPage = document.getElementById(pageId);
+            selectedPage.classList.add('active');
+            if (pageId === 'play') selectedPage.style.display = 'flex'; // maintain centering
+            
+            // Highlight button
+            event.target.classList.add('active');
+        }
 
-    <!-- CTA Banner -->
-    <section style="padding-top: 0;">
-      <div class="reveal" style="
-        background: linear-gradient(135deg, rgba(77,184,255,0.1) 0%, rgba(180,77,255,0.1) 100%);
-        border: 1px solid rgba(77,184,255,0.2);
-        border-radius: var(--radius);
-        padding: 56px 40px;
-        text-align: center;
-      ">
-        <p style="font-size: clamp(24px,4vw,36px); font-weight:700; margin-bottom:12px;">
-          Ready to build something?
-        </p>
-        <p style="color: var(--text-dim); font-size:17px; margin-bottom:32px; font-weight:400;">
-          It's free. No group required. Open your server and start building.
-        </p>
-        <a class="btn btn-primary" href="https://www.roblox.com/games/75337181865376" target="_blank" style="font-size:18px; padding:16px 40px;">
-          ▶ &nbsp;Play Build Island Reborn
-        </a>
-      </div>
-    </section>
+        // --- Updates Logic ---
+        // You can easily modify this array to add/remove updates!
+        const updatesData = [
+            {
+                title: "Quality of Life Update",
+                date: "October 12, 2023",
+                content: "<ul><li>Added new wiring tools</li><li>Fixed saving issues on private islands</li><li>UI improvements for the Admin Panel</li><li>Removed Herobrine</li></ul>"
+            },
+            {
+                title: "The Stamp Update",
+                date: "September 5, 2023",
+                content: "<ul><li>Introduced Stamps as a new currency</li><li>Added the Robux Shop</li><li>New cosmetic titles available</li></ul>"
+            },
+            {
+                title: "Launch Day!",
+                date: "August 1, 2023",
+                content: "<p>Welcome to Build Island Reborn! We have rebuilt the classic experience from the ground up to provide a safe, fun, and creative environment. Start building today!</p>"
+            }
+        ];
 
-    <div class="divider"></div>
-    <footer>
-      Made with 🏝️ by <strong>Saintfire</strong> &nbsp;·&nbsp;
-      <a href="https://www.roblox.com/games/75337181865376" target="_blank">Play on Roblox</a> &nbsp;·&nbsp;
-      <a href="https://discord.gg/your-invite" target="_blank">Discord</a> &nbsp;·&nbsp;
-      Not affiliated with Roblox Corporation.
-    </footer>
-  </div>
+        const updatesContainer = document.getElementById('updates-container');
 
-  <!-- ════════════════════════════════════════════════════════════════════════
-       FEATURES PAGE
-  ════════════════════════════════════════════════════════════════════════ -->
-  <div class="page" id="page-features">
-
-    <div class="features-hero">
-      <p class="section-title" style="font-size: clamp(32px,5vw,52px);">
-        Everything <span>Build Island</span> should've had
-      </p>
-      <p class="section-sub" style="margin: 12px auto 0; text-align:center;">
-        Reborn keeps everything you loved and adds the stuff Bereza never got around to.
-      </p>
-    </div>
-
-    <div class="feature-grid">
-
-      <!-- Wiring -->
-      <div class="feature-card blue reveal">
-        <span class="feature-icon">⚡</span>
-        <h3>Wiring System</h3>
-        <p>Connect blocks with wires to build machines, doors, traps, and full game mechanics. Includes logic gates, number variables, string variables, boolean variables, array variables, timers, and more.</p>
-        <span class="feature-badge exclusive">Original Feature</span>
-        <div class="tag-list">
-          <span class="tag">Logic Gates</span>
-          <span class="tag">Variables</span>
-          <span class="tag">Timers</span>
-          <span class="tag">Sensors</span>
-        </div>
-      </div>
-
-      <!-- Stamps Currency -->
-      <div class="feature-card gold reveal">
-        <span class="feature-icon">🪙</span>
-        <h3>Stamps Currency</h3>
-        <p>Earn Stamps just by playing — $50 every 5 minutes plus a bonus for having friends in your server. Spend them on server boosts, extra save slots, and more. No pay-to-win.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Earn by Playing</span>
-          <span class="tag">Friends Bonus</span>
-          <span class="tag">Send to Players</span>
-        </div>
-      </div>
-
-      <!-- Server Boosting -->
-      <div class="feature-card purple reveal">
-        <span class="feature-icon">🚀</span>
-        <h3>Beacon Boosting</h3>
-        <p>Spend Stamps to boost your server to the top of the server browser for 3 hours. Boosted servers have a pink name and auto-beacon every 5 minutes so you never have to manually bump.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Auto-Beacon</span>
-          <span class="tag">Pink Title</span>
-          <span class="tag">Top of List</span>
-        </div>
-      </div>
-
-      <!-- Anti-Grief -->
-      <div class="feature-card green reveal">
-        <span class="feature-icon">🛡️</span>
-        <h3>Anti-Grief System</h3>
-        <p>Build logs track every block placed and deleted. Trusted ranks let owners control who can build freely. Vote kick handles disruptive players when the owner isn't around. The NSFW chaos that killed the original Build Island won't happen here.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Build Logs</span>
-          <span class="tag">Trusted Ranks</span>
-          <span class="tag">Vote Kick</span>
-          <span class="tag">Moderation</span>
-        </div>
-      </div>
-
-      <!-- Discord Webhooks -->
-      <div class="feature-card cyan reveal">
-        <span class="feature-icon">📡</span>
-        <h3>Webhook Block</h3>
-        <p>Wire a Webhook Message Sender block to anything in your build — a kill detector, a door, a button — and get instant Discord notifications. Whitelist-only for security.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Discord Integration</span>
-          <span class="tag">Wirable</span>
-          <span class="tag">URL Whitelist</span>
-        </div>
-      </div>
-
-      <!-- Block Placer -->
-      <div class="feature-card pink reveal">
-        <span class="feature-icon">🧱</span>
-        <h3>Block Placer</h3>
-        <p>A wiring block that places any block by AssetId at a configurable position, rotation, and size when triggered. Build machines that build things. Automated construction.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Wirable</span>
-          <span class="tag">Any AssetId</span>
-          <span class="tag">Custom Size</span>
-        </div>
-      </div>
-
-      <!-- Save Slots -->
-      <div class="feature-card blue reveal">
-        <span class="feature-icon">💾</span>
-        <h3>Cloud Save Slots</h3>
-        <p>Save your builds to the cloud and load them into any server. Start with 3 free slots and buy more with Stamps. Publish your builds publicly or whitelist specific players.</p>
-        <span class="feature-badge exclusive">Original Feature</span>
-        <div class="tag-list">
-          <span class="tag">Cloud Saves</span>
-          <span class="tag">Public Builds</span>
-          <span class="tag">Whitelist</span>
-          <span class="tag">Buy with Stamps</span>
-        </div>
-      </div>
-
-      <!-- Modkits -->
-      <div class="feature-card gold reveal">
-        <span class="feature-icon">📦</span>
-        <h3>Modkit Imports</h3>
-        <p>Import community-made modkits to add hundreds of new blocks, weapons, NPCs, vehicles, and decorations to your server. Includes classic modkits like Liberty, Tekk3, Starburst, and more.</p>
-        <span class="feature-badge exclusive">Original Feature</span>
-        <div class="tag-list">
-          <span class="tag">Weapons</span>
-          <span class="tag">NPCs</span>
-          <span class="tag">Vehicles</span>
-          <span class="tag">Decor</span>
-        </div>
-      </div>
-
-      <!-- URL Fetcher -->
-      <div class="feature-card purple reveal">
-        <span class="feature-icon">🌐</span>
-        <h3>URL Fetcher Block</h3>
-        <p>Fetch live data from whitelisted URLs and pipe it into your wiring system. Pull from Pastebin, GitHub Gists, or Roblox APIs to create dynamic builds powered by real external data.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Pastebin</span>
-          <span class="tag">GitHub</span>
-          <span class="tag">Roblox API</span>
-          <span class="tag">Whitelist-Only</span>
-        </div>
-      </div>
-
-      <!-- Friends Panel -->
-      <div class="feature-card green reveal">
-        <span class="feature-icon">👥</span>
-        <h3>Friends Panel</h3>
-        <p>See which of your friends are playing and jump straight into their server from the main menu. No hunting through the server browser. Just click and join.</p>
-        <span class="feature-badge exclusive">Original Feature</span>
-        <div class="tag-list">
-          <span class="tag">Friend Detection</span>
-          <span class="tag">1-Click Join</span>
-        </div>
-      </div>
-
-      <!-- Chat Tags -->
-      <div class="feature-card cyan reveal">
-        <span class="feature-icon">💬</span>
-        <h3>Custom Chat Tags</h3>
-        <p>Rank-based chat tags show who owns the server, who's a mod, and who's a trusted builder at a glance. Configurable colours and styles per rank.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Rank-Based</span>
-          <span class="tag">Coloured Tags</span>
-          <span class="tag">Custom Bubbles</span>
-        </div>
-      </div>
-
-      <!-- Bild Iland Import -->
-      <div class="feature-card pink reveal">
-        <span class="feature-icon">🔄</span>
-        <h3>Save Migration</h3>
-        <p>Coming from Bild Iland Experimentil? Your builds can come with you. Reborn supports third-party transfer tools so you don't have to rebuild everything from scratch.</p>
-        <span class="feature-badge new">New in Reborn</span>
-        <div class="tag-list">
-          <span class="tag">Bild Iland Saves</span>
-          <span class="tag">3rd Party Tools</span>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="divider" style="max-width:1100px;"></div>
-    <footer>
-      Made with 🏝️ by <strong>Saintfire</strong> &nbsp;·&nbsp;
-      <a href="https://www.roblox.com/games/75337181865376" target="_blank">Play on Roblox</a> &nbsp;·&nbsp;
-      <a href="https://discord.gg/your-invite" target="_blank">Discord</a>
-    </footer>
-  </div>
-
-  <!-- ════════════════════════════════════════════════════════════════════════
-       COMMUNITY PAGE
-  ════════════════════════════════════════════════════════════════════════ -->
-  <div class="page" id="page-community">
-
-    <div class="community-hero">
-      <p class="section-title" style="font-size: clamp(32px,5vw,52px);">
-        Join the <span>Community</span>
-      </p>
-      <p class="section-sub" style="margin: 12px auto 0; text-align:center;">
-        40+ members and growing. Come hang out, share builds, report bugs, and shape what Reborn becomes.
-      </p>
-    </div>
-
-    <!-- Discord card -->
-    <div style="padding: 0 24px;">
-      <div class="discord-card reveal">
-        <span class="discord-logo">💬</span>
-        <h2>Build Island Reborn Discord</h2>
-        <p>The main hub for everything Reborn. Get update announcements, report griefers, share your builds, suggest features, and talk to Saintfire directly.</p>
-        <a class="btn btn-discord" href="https://discord.gg/your-invite" target="_blank" style="font-size:18px; padding:14px 36px;">
-          Join Discord Server
-        </a>
-      </div>
-    </div>
-
-    <!-- Community features -->
-    <div class="community-grid">
-      <div class="community-card reveal">
-        <span class="icon">📢</span>
-        <h3>Update Announcements</h3>
-        <p>Be the first to hear about new features, bug fixes, and events as soon as they go live.</p>
-      </div>
-      <div class="community-card reveal">
-        <span class="icon">🏆</span>
-        <h3>Build Showcases</h3>
-        <p>Share screenshots and videos of your best builds. Get feedback from the community.</p>
-      </div>
-      <div class="community-card reveal">
-        <span class="icon">🐛</span>
-        <h3>Bug Reports</h3>
-        <p>Found something broken? Report it directly and help make the game better for everyone.</p>
-      </div>
-      <div class="community-card reveal">
-        <span class="icon">💡</span>
-        <h3>Feature Suggestions</h3>
-        <p>Have an idea? Post it. Saintfire actually reads them and builds the good ones.</p>
-      </div>
-      <div class="community-card reveal">
-        <span class="icon">🛡️</span>
-        <h3>Griefer Reports</h3>
-        <p>Report exploiters and griefers with evidence. Bans happen fast here.</p>
-      </div>
-      <div class="community-card reveal">
-        <span class="icon">🎉</span>
-        <h3>Events</h3>
-        <p>Build competitions, server showcases, and community events run regularly.</p>
-      </div>
-    </div>
-
-    <!-- Roblox group CTA -->
-    <section style="padding-top: 0;">
-      <div class="reveal" style="
-        background: linear-gradient(135deg, rgba(61,255,154,0.07) 0%, rgba(77,184,255,0.07) 100%);
-        border: 1px solid rgba(61,255,154,0.15);
-        border-radius: var(--radius);
-        padding: 48px 40px;
-        text-align: center;
-        max-width: 700px;
-        margin: 0 auto;
-      ">
-        <p style="font-size: 36px; margin-bottom:16px;">🏝️</p>
-        <p style="font-size: clamp(22px,3vw,30px); font-weight:700; margin-bottom:10px;">
-          Just want to play?
-        </p>
-        <p style="color: var(--text-dim); font-size:16px; margin-bottom:28px; font-weight:400;">
-          No Discord required. No group to join. Just open Roblox and hit play.
-        </p>
-        <a class="btn btn-green" href="https://www.roblox.com/games/75337181865376" target="_blank" style="font-size:17px; padding:14px 36px;">
-          ▶ &nbsp;Play Build Island Reborn
-        </a>
-      </div>
-    </section>
-
-    <div class="divider"></div>
-    <footer>
-      Made with 🏝️ by <strong>Saintfire</strong> &nbsp;·&nbsp;
-      <a href="https://www.roblox.com/games/75337181865376" target="_blank">Play on Roblox</a> &nbsp;·&nbsp;
-      <a href="https://discord.gg/your-invite" target="_blank">Discord</a>
-    </footer>
-  </div>
-
-  <!-- ── Script ──────────────────────────────────────────────────────────── -->
-  <script>
-    // ── Page navigation ────────────────────────────────────────────────────
-    function showPage(name) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('[data-page]').forEach(a => a.classList.remove('active'));
-
-      const page = document.getElementById('page-' + name);
-      if (page) {
-        page.classList.add('active');
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        // Trigger reveals on newly shown page
-        setTimeout(() => observeReveals(), 50);
-      }
-
-      const link = document.querySelector('[data-page="' + name + '"]');
-      if (link) link.classList.add('active');
-    }
-
-    // ── Scroll reveal ──────────────────────────────────────────────────────
-    function observeReveals() {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry, i) => {
-          if (entry.isIntersecting) {
-            setTimeout(() => {
-              entry.target.classList.add('visible');
-            }, i * 60);
-            observer.unobserve(entry.target);
-          }
+        // Render updates cards
+        updatesData.forEach((update, index) => {
+            const card = document.createElement('div');
+            card.className = 'update-card';
+            card.innerHTML = `
+                <div class="update-date">${update.date}</div>
+                <h3 class="update-title">${update.title}</h3>
+            `;
+            card.onclick = () => openModal(index);
+            updatesContainer.appendChild(card);
         });
-      }, { threshold: 0.1 });
 
-      document.querySelectorAll('.page.active .reveal:not(.visible)').forEach(el => {
-        observer.observe(el);
-      });
-    }
+        // Modal Logic
+        const modal = document.getElementById('update-modal');
+        function openModal(index) {
+            const data = updatesData[index];
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-date').innerText = data.date;
+            document.getElementById('modal-body').innerHTML = data.content;
+            modal.style.display = 'flex';
+        }
 
-    // Init on load
-    observeReveals();
-  </script>
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        // Close modal if clicking outside the window
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
 </body>
 </html>
