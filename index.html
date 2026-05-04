@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Updated to a blue-to-whitish-blue gradient */
             --bg-gradient: linear-gradient(180deg, #60a5fa 0%, #bae6fd 50%, #e0f2fe 100%);
             --panel-bg: rgba(30, 30, 30, 0.95);
             --panel-header: rgba(50, 50, 50, 0.9);
@@ -30,7 +29,6 @@
             flex-direction: column;
         }
 
-        /* Navigation */
         nav {
             background-color: var(--panel-header);
             padding: 15px 0;
@@ -54,26 +52,17 @@
             display: inline-block;
         }
 
-        nav a:hover {
-            color: white;
-        }
-
-        nav a.active {
-            color: white;
-        }
-
+        nav a:hover { color: white; }
+        nav a.active { color: white; }
         nav a.active::after {
             content: '';
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
+            bottom: 0; left: 0;
+            width: 100%; height: 3px;
             background-color: white;
             border-radius: 2px;
         }
 
-        /* Page Container */
         .page {
             display: none;
             padding: 40px 20px;
@@ -94,7 +83,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Reusable UI Elements */
         .window-panel {
             background-color: var(--panel-bg);
             border-radius: 8px;
@@ -113,11 +101,8 @@
             border-bottom: 2px solid #111;
         }
 
-        .window-content {
-            padding: 20px;
-        }
+        .window-content { padding: 20px; }
 
-        /* Play Page Styles */
         #play {
             text-align: center;
             display: flex;
@@ -133,7 +118,6 @@
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
 
-        /* Title Layering to fix outline overlap */
         .title-wrapper {
             position: relative;
             display: inline-block;
@@ -147,19 +131,15 @@
             letter-spacing: 2px;
         }
 
-        /* The stroke layer sits behind */
         .game-title.stroke-layer {
             position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            left: 0; top: 0; width: 100%;
             -webkit-text-stroke: 6px var(--text-dark-outline);
             z-index: 1;
             color: white;
             text-shadow: 0 4px 6px rgba(0,0,0,0.4);
         }
 
-        /* The fill layer sits on top, covering the inner half of the stroke */
         .game-title.fill-layer {
             position: relative;
             z-index: 2;
@@ -195,7 +175,6 @@
             filter: brightness(1.1);
         }
 
-        /* Rules Page Styles */
         .rule-section {
             background-color: black;
             border: 2px solid #333;
@@ -211,25 +190,10 @@
             padding-bottom: 5px;
         }
 
-        .rule-section h3 {
-            color: var(--blue-accent);
-            margin-bottom: 5px;
-        }
-
-        .rule-section ul {
-            margin: 0 0 10px 0;
-            padding-left: 20px;
-            color: #bbb;
-        }
-
-        .action-result {
-            font-weight: bold;
-            color: #ff4d4d;
-        }
-        
-        .action-none {
-            color: var(--green-accent);
-        }
+        .rule-section h3 { color: var(--blue-accent); margin-bottom: 5px; }
+        .rule-section ul { margin: 0 0 10px 0; padding-left: 20px; color: #bbb; }
+        .action-result { font-weight: bold; color: #ff4d4d; }
+        .action-none { color: var(--green-accent); }
 
         blockquote {
             border-left: 4px solid var(--blue-accent);
@@ -239,7 +203,6 @@
             font-style: italic;
         }
 
-        /* Updates Page Styles */
         .updates-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -255,24 +218,10 @@
             transition: border-color 0.2s;
         }
 
-        .update-card:hover {
-            border-color: var(--blue-accent);
-        }
+        .update-card:hover { border-color: var(--blue-accent); }
+        .update-date { color: #888; font-size: 14px; margin-bottom: 5px; }
+        .update-title { font-size: 20px; font-weight: bold; color: white; margin: 0; }
 
-        .update-date {
-            color: #888;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .update-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            margin: 0;
-        }
-
-        /* Modal for Updates */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -296,15 +245,13 @@
             color: white;
             font-weight: bold;
             border-radius: 4px;
-            width: 30px;
-            height: 30px;
+            width: 30px; height: 30px;
             cursor: pointer;
             float: right;
             font-family: 'Fredoka', sans-serif;
             font-size: 18px;
         }
 
-        /* Community Page */
         .community-box {
             text-align: center;
             padding: 50px 20px;
@@ -313,10 +260,7 @@
             border-radius: 6px;
         }
 
-        .stamp-icon {
-            width: 80px;
-            margin-bottom: 20px;
-        }
+        .stamp-icon { width: 80px; margin-bottom: 20px; }
 
         .btn-discord {
             background-color: #5865F2;
@@ -331,12 +275,342 @@
             border: 2px solid #404eed;
             box-shadow: 0 4px 0px #2f3ab3;
         }
-        
+
         .btn-discord:hover {
             transform: translateY(2px);
             box-shadow: 0 2px 0px #2f3ab3;
         }
 
+        /* ========== DOCS PAGE STYLES ========== */
+        #docs { max-width: 1100px; }
+
+        .docs-controls {
+            background-color: black;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .docs-search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .docs-search-wrap::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .docs-search {
+            width: 100%;
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 6px;
+            color: white;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            padding: 10px 14px 10px 40px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .docs-search:focus { border-color: var(--blue-accent); }
+        .docs-search::placeholder { color: #555; }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .filter-label {
+            color: #888;
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .filter-btn {
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 20px;
+            color: #aaa;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 5px 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .filter-btn:hover { border-color: #888; color: white; }
+
+        .filter-btn.active {
+            border-color: var(--blue-accent);
+            color: var(--blue-accent);
+            background: rgba(0,170,255,0.12);
+        }
+
+        .tag-filter-btn {
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 20px;
+            color: #aaa;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 4px 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tag-filter-btn:hover { border-color: #888; color: white; }
+        .tag-filter-btn.active {
+            color: white;
+        }
+
+        /* tag color active states */
+        .tag-filter-btn[data-tag="Wirable"].active { border-color: #f59e0b; background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .tag-filter-btn[data-tag="Anchored"].active { border-color: #ef4444; background: rgba(239,68,68,0.15); color: #ef4444; }
+        .tag-filter-btn[data-tag="Resizable"].active { border-color: #22c55e; background: rgba(34,197,94,0.15); color: #22c55e; }
+        .tag-filter-btn[data-tag="Configurable"].active { border-color: #a855f7; background: rgba(168,85,247,0.15); color: #a855f7; }
+        .tag-filter-btn[data-tag="Deadly"].active { border-color: #ff4d4d; background: rgba(255,77,77,0.15); color: #ff4d4d; }
+
+        .docs-results-count {
+            color: #555;
+            font-size: 15px;
+            padding: 0 4px;
+            white-space: nowrap;
+        }
+
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        .block-card {
+            background-color: #0d0d0d;
+            border: 2px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: border-color 0.18s, transform 0.12s;
+            position: relative;
+        }
+
+        .block-card:hover {
+            border-color: var(--blue-accent);
+            transform: translateY(-2px);
+        }
+
+        .block-card-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .block-card-name {
+            font-size: 19px;
+            font-weight: 700;
+            color: white;
+            margin: 0 0 4px 0;
+        }
+
+        .block-card-category {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .block-card-desc {
+            font-size: 14px;
+            color: #999;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .block-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .block-tag {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 10px;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .tag-Wirable  { background: rgba(245,158,11,0.18); color: #f59e0b; border: 1px solid #f59e0b; }
+        .tag-Anchored { background: rgba(239,68,68,0.18); color: #ef4444; border: 1px solid #ef4444; }
+        .tag-Resizable { background: rgba(34,197,94,0.18); color: #22c55e; border: 1px solid #22c55e; }
+        .tag-Configurable { background: rgba(168,85,247,0.18); color: #a855f7; border: 1px solid #a855f7; }
+        .tag-Deadly { background: rgba(255,77,77,0.18); color: #ff4d4d; border: 1px solid #ff4d4d; }
+
+        .docs-no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #444;
+            font-size: 22px;
+        }
+
+        /* Block Detail Modal */
+        .block-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .block-modal-content {
+            width: 92%;
+            max-width: 560px;
+            background: #111;
+            border: 2px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+
+        .block-modal-header {
+            background: #1c1c1c;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 2px solid #222;
+        }
+
+        .block-modal-icon { font-size: 42px; }
+
+        .block-modal-header-info { flex: 1; }
+
+        .block-modal-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin: 0 0 2px 0;
+        }
+
+        .block-modal-cat {
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .block-modal-close {
+            background: #ff4d4d;
+            border: 2px solid #aa0000;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            width: 30px; height: 30px;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            align-self: flex-start;
+        }
+
+        .block-modal-body {
+            padding: 20px;
+            color: #ccc;
+            font-size: 15px;
+            line-height: 1.6;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .block-modal-section { margin-bottom: 18px; }
+        .block-modal-section:last-child { margin-bottom: 0; }
+
+        .block-modal-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--blue-accent);
+            margin-bottom: 8px;
+        }
+
+        .block-modal-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+        .block-detail-prop {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .block-detail-prop-key {
+            color: #666;
+            font-weight: 600;
+            min-width: 110px;
+        }
+
+        .block-detail-prop-val { color: #ddd; }
+
+        .wiring-ports {
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 10px 14px;
+        }
+
+        .wiring-port-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
+            border-bottom: 1px solid #1a1a1a;
+            font-size: 14px;
+        }
+
+        .wiring-port-row:last-child { border-bottom: none; }
+
+        .port-dir {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .port-in  { background: rgba(34,197,94,0.2);  color: #22c55e; border: 1px solid #22c55e; }
+        .port-out { background: rgba(239,68,68,0.2);  color: #ef4444; border: 1px solid #ef4444; }
+
+        .port-name { color: #ddd; font-weight: 600; }
+        .port-desc { color: #666; }
+
+        /* Divider between filter rows */
+        .filter-divider {
+            width: 100%;
+            height: 1px;
+            background: #222;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -345,63 +619,46 @@
         <a href="#play" class="nav-link">Play</a>
         <a href="#rules" class="nav-link">Game Rules</a>
         <a href="#updates" class="nav-link">Updates</a>
+        <a href="#docs" class="nav-link">Docs</a>
         <a href="#community" class="nav-link">Community</a>
     </nav>
 
     <main id="play" class="page">
         <img src="favicon.png" alt="Build Island Logo" class="main-logo" onerror="this.style.display='none'">
-
         <div class="title-wrapper">
             <h1 class="game-title stroke-layer">Build Island <span class="gradient-text">Reborn</span></h1>
             <h1 class="game-title fill-layer">Build Island <span class="gradient-text">Reborn</span></h1>
         </div>
-
-        
         <br>
         <a href="https://www.roblox.com/games/122517558607766" target="_blank" class="btn-roblox">Join</a>
     </main>
 
     <main id="rules" class="page">
         <div class="window-panel">
-            <div class="window-header">
-                🛡️ Server Admin - Game Rules
-            </div>
+            <div class="window-header">🛡️ Server Admin - Game Rules</div>
             <div class="window-content">
-                
                 <div class="rule-section">
                     <h2>1. Griefing</h2>
                     <p>Griefing or promoting the act of griefing is strictly prohibited.</p>
                     <blockquote>"to grief": to ruin other players' experiences.</blockquote>
-                    
                     <h3>Minor Griefing</h3>
                     <ul>
                         <li>Building on top of everyone's builds in the server</li>
                         <li>Putting spikes around the spawn area</li>
                     </ul>
                     <p>Result of Action: <span class="action-result action-none">None</span> <em>(can be prevented by server owners)</em></p>
-
                     <h3>Standard Griefing</h3>
-                    <ul>
-                        <li>A build that kills all players upon spawning (e.g., Teleport Traps, Microwaves)</li>
-                    </ul>
+                    <ul><li>A build that kills all players upon spawning (e.g., Teleport Traps, Microwaves)</li></ul>
                     <p>Result of Action: <span class="action-result">14d ban</span></p>
-
                     <h3>Major Griefing</h3>
-                    <ul>
-                        <li>Any build that makes the server unplayable (e.g., server crashers, laggers)</li>
-                    </ul>
+                    <ul><li>Any build that makes the server unplayable (e.g., server crashers, laggers)</li></ul>
                     <p>Result of Action: <span class="action-result">Permanent ban</span></p>
                 </div>
-
                 <div class="rule-section">
                     <h2>2. NSFW</h2>
                     <h3>Minor Breakage</h3>
-                    <ul>
-                        <li>An upside down T</li>
-                        <li>A build slightly suggestive</li>
-                    </ul>
+                    <ul><li>An upside down T</li><li>A build slightly suggestive</li></ul>
                     <p>Result of Action: <span class="action-result">3d ban</span></p>
-
                     <h3>Major Breakage</h3>
                     <ul>
                         <li>Building a detailed NSFW build</li>
@@ -410,64 +667,92 @@
                     </ul>
                     <p>Result of Action: <span class="action-result">Permanent ban</span></p>
                 </div>
-
                 <div class="rule-section">
                     <h2>3. Exploiting</h2>
                     <h3>Minor Breakage</h3>
-                    <ul>
-                        <li>Using third party tools for little to no advantage in the game</li>
-                    </ul>
+                    <ul><li>Using third party tools for little to no advantage in the game</li></ul>
                     <p>Result of Action: <span class="action-result action-none">None</span></p>
-
                     <h3>Major Breakage</h3>
-                    <ul>
-                        <li>Using executors to inject code into the game to grief servers (e.g., flinging everyone)</li>
-                    </ul>
+                    <ul><li>Using executors to inject code into the game to grief servers (e.g., flinging everyone)</li></ul>
                     <p>Result of Action: <span class="action-result">Permanent ban</span></p>
                 </div>
-
                 <div class="rule-section">
                     <h2>4. Destructively abusing glitches</h2>
-                    <ul>
-                        <li>E.g., abusing a glitch to be able to kick/ban moderators from your server</li>
-                    </ul>
+                    <ul><li>E.g., abusing a glitch to be able to kick/ban moderators from your server</li></ul>
                     <p>Result of Action: <span class="action-result">7d ban</span> → <span class="action-result">Permanent on 2nd offense</span></p>
                 </div>
-
                 <div class="rule-section">
                     <h2>5. Degrading the game's reputation</h2>
-                    <ul>
-                        <li>Criticism is allowed, as long as it isn't destructive and makes others not want to play the game (e.g., spreading misinformation)</li>
-                    </ul>
+                    <ul><li>Criticism is allowed, as long as it isn't destructive and makes others not want to play the game (e.g., spreading misinformation)</li></ul>
                     <p>Result of Action: <span class="action-result">Permanent ban</span></p>
                 </div>
-
                 <div class="rule-section">
                     <h2>6. Roblox TOS</h2>
-                    <ul>
-                        <li>Follow Roblox TOS at all times</li>
-                    </ul>
+                    <ul><li>Follow Roblox TOS at all times</li></ul>
                 </div>
-
             </div>
         </div>
     </main>
 
     <main id="updates" class="page">
         <div class="window-panel">
-            <div class="window-header">
-                📝 Update Log
-            </div>
-            <div class="window-content updates-grid" id="updates-container">
+            <div class="window-header">📝 Update Log</div>
+            <div class="window-content updates-grid" id="updates-container"></div>
+        </div>
+    </main>
+
+    <!-- DOCS PAGE -->
+    <main id="docs" class="page">
+        <div class="window-panel">
+            <div class="window-header">📦 Block Documentation</div>
+            <div class="window-content">
+
+                <div class="docs-controls">
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;width:100%;">
+                        <div class="docs-search-wrap">
+                            <input type="text" class="docs-search" id="docs-search" placeholder="Search blocks..." autocomplete="off">
+                        </div>
+                        <span class="docs-results-count" id="docs-count"></span>
+                    </div>
+
+                    <div class="filter-divider"></div>
+
+                    <div class="filter-row" style="width:100%;">
+                        <span class="filter-label">Category:</span>
+                        <button class="filter-btn active" data-cat="All">All</button>
+                        <button class="filter-btn" data-cat="Basic Building">Basic</button>
+                        <button class="filter-btn" data-cat="Advanced Building">Advanced</button>
+                        <button class="filter-btn" data-cat="House Kit">House Kit</button>
+                        <button class="filter-btn" data-cat="Castle Kit">Castle Kit</button>
+                        <button class="filter-btn" data-cat="Space Kit">Space Kit</button>
+                        <button class="filter-btn" data-cat="Wiring">Wiring</button>
+                        <button class="filter-btn" data-cat="Vehicles">Vehicles</button>
+                        <button class="filter-btn" data-cat="Deadly Machines">Deadly</button>
+                        <button class="filter-btn" data-cat="Miscellaneous">Misc</button>
+                    </div>
+
+                    <div class="filter-row" style="width:100%;">
+                        <span class="filter-label">Tags:</span>
+                        <button class="tag-filter-btn" data-tag="Wirable">⚡ Wirable</button>
+                        <button class="tag-filter-btn" data-tag="Anchored">⚓ Anchored</button>
+                        <button class="tag-filter-btn" data-tag="Resizable">↔ Resizable</button>
+                        <button class="tag-filter-btn" data-tag="Configurable">⚙️ Configurable</button>
+                        <button class="tag-filter-btn" data-tag="Deadly">☠️ Deadly</button>
+                    </div>
                 </div>
+
+                <div class="docs-grid" id="docs-grid"></div>
+                <div class="docs-no-results" id="docs-no-results" style="display:none;">
+                    No blocks found. Try a different search or filter.
+                </div>
+
+            </div>
         </div>
     </main>
 
     <main id="community" class="page">
         <div class="window-panel">
-            <div class="window-header">
-                🌍 Community Hub
-            </div>
+            <div class="window-header">🌍 Community Hub</div>
             <div class="window-content community-box">
                 <img src="stamp.png" alt="Stamp" class="stamp-icon" onerror="this.style.display='none'">
                 <h2 style="margin: 0; font-size: 36px;">Join the Conversation!</h2>
@@ -477,6 +762,7 @@
         </div>
     </main>
 
+    <!-- Update Modal -->
     <div class="modal-overlay" id="update-modal">
         <div class="window-panel modal-content">
             <div class="window-header">
@@ -490,96 +776,299 @@
         </div>
     </div>
 
+    <!-- Block Detail Modal -->
+    <div class="block-modal-overlay" id="block-modal">
+        <div class="block-modal-content">
+            <div class="block-modal-header">
+                <span class="block-modal-icon" id="bm-icon"></span>
+                <div class="block-modal-header-info">
+                    <div class="block-modal-title" id="bm-title"></div>
+                    <div class="block-modal-cat" id="bm-cat"></div>
+                </div>
+                <button class="block-modal-close" onclick="closeBlockModal()">X</button>
+            </div>
+            <div class="block-modal-body" id="bm-body"></div>
+        </div>
+    </div>
+
     <script>
-        // --- Hash Navigation Logic ---
-        function handleRouting() {
-            // Get the hash without the '#' (default to 'play' if empty)
-            let currentHash = window.location.hash.substring(1) || 'play';
-            
-            // Hide all pages
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-                if(page.id === 'play') page.style.display = 'none';
-            });
-            
-            // Remove active class from all links
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-
-            // Show target page
-            const targetPage = document.getElementById(currentHash);
-            if (targetPage) {
-                targetPage.classList.add('active');
-                if (currentHash === 'play') targetPage.style.display = 'flex'; // maintain flex centering
-                
-                // Highlight matching nav link
-                const targetLink = document.querySelector(`.nav-link[href="#${currentHash}"]`);
-                if(targetLink) targetLink.classList.add('active');
-            } else {
-                // Fallback to play if URL hash is invalid
-                document.getElementById('play').classList.add('active');
-                document.getElementById('play').style.display = 'flex';
-                document.querySelector(`.nav-link[href="#play"]`).classList.add('active');
-            }
-        }
-
-        // Listen for URL changes and run on initial load
-        window.addEventListener('hashchange', handleRouting);
-        window.addEventListener('DOMContentLoaded', handleRouting);
-
-
-        // --- Updates Logic ---
-        const updatesData = [
-            {
-                title: "Quality of Life Update",
-                date: "October 12, 2023",
-                content: "<ul><li>Added new wiring tools</li><li>Fixed saving issues on private islands</li><li>UI improvements for the Admin Panel</li><li>Removed Herobrine</li></ul>"
-            },
-            {
-                title: "The Stamp Update",
-                date: "September 5, 2023",
-                content: "<ul><li>Introduced Stamps as a new currency</li><li>Added the Robux Shop</li><li>New cosmetic titles available</li></ul>"
-            },
-            {
-                title: "Launch Day!",
-                date: "August 1, 2023",
-                content: "<p>Welcome to Build Island Reborn! We have rebuilt the classic experience from the ground up to provide a safe, fun, and creative environment. Start building today!</p>"
-            }
-        ];
-
-        const updatesContainer = document.getElementById('updates-container');
-
-        updatesData.forEach((update, index) => {
-            const card = document.createElement('div');
-            card.className = 'update-card';
-            card.innerHTML = `
-                <div class="update-date">${update.date}</div>
-                <h3 class="update-title">${update.title}</h3>
-            `;
-            card.onclick = () => openModal(index);
-            updatesContainer.appendChild(card);
+    // ============ ROUTING ============
+    function handleRouting() {
+        let currentHash = window.location.hash.substring(1) || 'play';
+        document.querySelectorAll('.page').forEach(page => {
+            page.classList.remove('active');
+            if (page.id === 'play') page.style.display = 'none';
         });
-
-        // Modal Logic
-        const modal = document.getElementById('update-modal');
-        function openModal(index) {
-            const data = updatesData[index];
-            document.getElementById('modal-title').innerText = data.title;
-            document.getElementById('modal-date').innerText = data.date;
-            document.getElementById('modal-body').innerHTML = data.content;
-            modal.style.display = 'flex';
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        const target = document.getElementById(currentHash);
+        if (target) {
+            target.classList.add('active');
+            if (currentHash === 'play') target.style.display = 'flex';
+            const link = document.querySelector(`.nav-link[href="#${currentHash}"]`);
+            if (link) link.classList.add('active');
+        } else {
+            document.getElementById('play').classList.add('active');
+            document.getElementById('play').style.display = 'flex';
+            document.querySelector('.nav-link[href="#play"]').classList.add('active');
         }
+    }
+    window.addEventListener('hashchange', handleRouting);
+    window.addEventListener('DOMContentLoaded', handleRouting);
 
-        function closeModal() {
-            modal.style.display = 'none';
+    // ============ UPDATES ============
+    const updatesData = [
+        {
+            title: "Quality of Life Update",
+            date: "October 12, 2023",
+            content: "<ul><li>Added new wiring tools</li><li>Fixed saving issues on private islands</li><li>UI improvements for the Admin Panel</li><li>Removed Herobrine</li></ul>"
+        },
+        {
+            title: "The Stamp Update",
+            date: "September 5, 2023",
+            content: "<ul><li>Introduced Stamps as a new currency</li><li>Added the Robux Shop</li><li>New cosmetic titles available</li></ul>"
+        },
+        {
+            title: "Launch Day!",
+            date: "August 1, 2023",
+            content: "<p>Welcome to Build Island Reborn! We have rebuilt the classic experience from the ground up to provide a safe, fun, and creative environment. Start building today!</p>"
         }
+    ];
 
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
+    const updatesContainer = document.getElementById('updates-container');
+    updatesData.forEach((update, index) => {
+        const card = document.createElement('div');
+        card.className = 'update-card';
+        card.innerHTML = `<div class="update-date">${update.date}</div><h3 class="update-title">${update.title}</h3>`;
+        card.onclick = () => openModal(index);
+        updatesContainer.appendChild(card);
+    });
+
+    const updateModal = document.getElementById('update-modal');
+    function openModal(index) {
+        const d = updatesData[index];
+        document.getElementById('modal-title').innerText = d.title;
+        document.getElementById('modal-date').innerText = d.date;
+        document.getElementById('modal-body').innerHTML = d.content;
+        updateModal.style.display = 'flex';
+    }
+    function closeModal() { updateModal.style.display = 'none'; }
+    window.addEventListener('click', e => { if (e.target === updateModal) closeModal(); });
+
+    // ============ BLOCK DATABASE ============
+    const blocksData = [
+        // BASIC BUILDING
+        { id: 1, name: "Block", icon: "🟫", category: "Basic Building", tags: ["Resizable"], description: "The standard cube block. Comes in every material and color. The most fundamental building piece in the game.", tips: "Use the Paint Tool to color it any shade. Combine with wedges for smooth edges.", properties: { Materials: "All (SmoothPlastic, Wood, Brick, etc.)", Resizable: "Yes", Anchored: "No" }, wiring: null },
+        { id: 2, name: "Wedge", icon: "📐", category: "Basic Building", tags: ["Resizable"], description: "A triangular wedge shape useful for roofs, ramps, and angled surfaces. Available in all materials.", tips: "Combine with Corner Wedges to make smooth curves and complex shapes.", properties: { Materials: "All", Resizable: "Yes", Anchored: "No" }, wiring: null },
+        { id: 3, name: "Corner Wedge", icon: "🔺", category: "Basic Building", tags: ["Resizable"], description: "A wedge with a corner cut. Great for transitioning between flat surfaces and angled ones.", tips: "Used in corners of roofs to fill gaps that regular wedges leave.", properties: { Materials: "All", Resizable: "Yes", Anchored: "No" }, wiring: null },
+        { id: 4, name: "Inverse Corner", icon: "🔻", category: "Basic Building", tags: ["Resizable"], description: "The inverse of the Corner Wedge. Used for concave corners and inside edges.", tips: "Pair with Corner Wedge for seamless rounded or complex angles.", properties: { Materials: "All", Resizable: "Yes", Anchored: "No" }, wiring: null },
+        { id: 5, name: "Inverse Wedge", icon: "🔷", category: "Basic Building", tags: ["Resizable"], description: "An inverted wedge shape for making indentations and curved surfaces that go inward.", tips: "Useful for carving concave slopes into your builds.", properties: { Materials: "All", Resizable: "Yes", Anchored: "No" }, wiring: null },
+        { id: 6, name: "Steps", icon: "🪜", category: "Basic Building", tags: ["Resizable"], description: "A stair-step shape. Used to create staircases and layered surfaces.", tips: "Resize to match the scale of your build perfectly.", properties: { Materials: "All", Resizable: "Yes", Anchored: "No" }, wiring: null },
+        { id: 7, name: "Tree - Small", icon: "🌱", category: "Basic Building", tags: [], description: "A small decorative tree. Great for gardens, parks, and adding natural greenery to builds.", tips: "Plant several at varying heights for a natural forest look.", properties: { Resizable: "No", Anchored: "No" }, wiring: null },
+        { id: 8, name: "Tree - Medium", icon: "🌳", category: "Basic Building", tags: [], description: "A medium-sized decorative tree. A good middle-ground for parks and outdoor areas.", tips: "Mix with small and large trees for variety.", properties: { Resizable: "No", Anchored: "No" }, wiring: null },
+        { id: 9, name: "Tree - Large", icon: "🌲", category: "Basic Building", tags: [], description: "A large decorative tree perfect for forests, parks, and wilderness settings.", tips: "Scale the area around it to make it feel monumental.", properties: { Resizable: "No", Anchored: "No" }, wiring: null },
+        { id: 10, name: "Autumn Tree - Large", icon: "🍂", category: "Basic Building", tags: [], description: "A large tree with autumn-colored foliage, great for fall-themed builds.", tips: "Use alongside regular large trees for contrast.", properties: { Resizable: "No", Anchored: "No" }, wiring: null },
+
+        // ADVANCED BUILDING
+        { id: 11, name: "Donation Stand", icon: "💰", category: "Advanced Building", tags: ["Configurable", "Anchored"], description: "Lets players donate Robux to the server owner via their T-Shirts or Gamepasses. Donations may take up to a week to receive.", tips: "Configure it with your T-Shirt or Gamepass ID. Place near spawn for visibility.", properties: { Anchored: "Yes", Configurable: "Yes" }, wiring: null },
+        { id: 12, name: "Claimable Donation Stand", icon: "🏷️", category: "Advanced Building", tags: ["Configurable", "Anchored"], description: "A donation stand that can be claimed and configured by any player who interacts with it first.", tips: "Great for shared community servers.", properties: { Anchored: "Yes", Configurable: "Yes" }, wiring: null },
+        { id: 13, name: "Conveyor (Wired)", icon: "🏭", category: "Advanced Building", tags: ["Wirable", "Anchored"], description: "A conveyor belt that moves players and parts in a direction. Can be toggled with a wire signal.", tips: "Wire to a button to create switchable conveyor systems.", properties: { Anchored: "Yes", Speed: "Configurable" }, wiring: [{ dir: "in", name: "Toggle", desc: "Activates or deactivates the conveyor" }] },
+        { id: 14, name: "Ceiling Light", icon: "💡", category: "Advanced Building", tags: ["Wirable", "Anchored"], description: "An anchored ceiling light that illuminates an area. Can be wired to turn on and off.", tips: "Wire multiple lights to a single switch for easy room control.", properties: { Anchored: "Yes", Color: "Configurable" }, wiring: [{ dir: "in", name: "Toggle", desc: "Turns the light on or off" }] },
+        { id: 15, name: "Streetlight", icon: "🌃", category: "Advanced Building", tags: ["Anchored"], description: "A tall anchored streetlight for outdoor areas, roads, and paths.", tips: "Line them up evenly along roads using the scale tool for consistency.", properties: { Anchored: "Yes" }, wiring: null },
+        { id: 16, name: "Text Sign", icon: "🪧", category: "Advanced Building", tags: ["Configurable", "Resizable"], description: "A configurable sign that displays custom text. Resize to any dimension.", tips: "Use for labels, shop signs, warnings, or storytelling in your builds.", properties: { Resizable: "Yes", Configurable: "Yes (text content)" }, wiring: null },
+        { id: 17, name: "Spawn Point", icon: "📍", category: "Advanced Building", tags: ["Configurable"], description: "Sets a custom spawn location for players. Place it where you want players to appear.", tips: "Use multiple spawn points for team-based games.", properties: { Configurable: "Yes" }, wiring: null },
+        { id: 18, name: "Script Block", icon: "📜", category: "Advanced Building", tags: ["Configurable", "Wirable"], description: "A powerful block that runs Lua-like scripting to create custom behaviors. Supports trust elevation, ports, and more.", tips: "Use io.port.input.new() and io.port.output.new() to wire it to other blocks.", properties: { Configurable: "Yes (Lua script)", Anchored: "No" }, wiring: [{ dir: "in", name: "Input Port(s)", desc: "Receives wire signals for logic" }, { dir: "out", name: "Output Port(s)", desc: "Sends wire signals to other blocks" }] },
+
+        // WIRING
+        { id: 19, name: "Button", icon: "🔘", category: "Wiring", tags: ["Wirable", "Configurable"], description: "A pushable button that sends a single pulse signal when pressed by a player.", tips: "Wire to doors, lights, or elevators. Use the Config tool to change its label.", properties: { Signal: "Pulse (on press)" }, wiring: [{ dir: "out", name: "Pressed", desc: "Fires a pulse when the button is pressed" }] },
+        { id: 20, name: "Lever", icon: "🕹️", category: "Wiring", tags: ["Wirable"], description: "A toggle switch that stays on or off until flipped again. Great for persistent states like doors.", tips: "Pair with One-Way Doors or lights for on/off toggle systems.", properties: { Signal: "Toggle (stays on/off)" }, wiring: [{ dir: "out", name: "State", desc: "Sends continuous on/off signal" }] },
+        { id: 21, name: "Pressure Plate", icon: "🟩", category: "Wiring", tags: ["Wirable", "Resizable"], description: "Activates when a player or part stands on it. Deactivates when the player leaves.", tips: "Great for automatic doors or traps. Resize to cover larger areas.", properties: { Signal: "Held (on while stood on)", Resizable: "Yes" }, wiring: [{ dir: "out", name: "Activated", desc: "Signal held while something is on the plate" }] },
+        { id: 22, name: "One-Way Door", icon: "🚪", category: "Wiring", tags: ["Wirable", "Anchored"], description: "A door that opens in one direction when it receives a signal. Stays closed otherwise.", tips: "Wire to a lever or button to make an interactable entrance.", properties: { Anchored: "Yes" }, wiring: [{ dir: "in", name: "Open", desc: "Opens the door when signal is high" }] },
+        { id: 23, name: "Two-Way Door", icon: "🔄", category: "Wiring", tags: ["Wirable", "Anchored"], description: "Opens from both sides. Ideal for hallways and passages that need to be accessed from either direction.", tips: "Can be wired or opened by touching from either side.", properties: { Anchored: "Yes" }, wiring: [{ dir: "in", name: "Toggle", desc: "Toggles the door open or closed" }] },
+        { id: 24, name: "AND Gate", icon: "➕", category: "Wiring", tags: ["Wirable"], description: "Outputs a signal only when both inputs are active simultaneously. A fundamental logic gate.", tips: "Chain AND gates for complex multi-condition systems.", properties: { Inputs: "2", Logic: "A AND B → Output" }, wiring: [{ dir: "in", name: "Input A", desc: "First condition" }, { dir: "in", name: "Input B", desc: "Second condition" }, { dir: "out", name: "Output", desc: "High only when both inputs are high" }] },
+        { id: 25, name: "OR Gate", icon: "🔀", category: "Wiring", tags: ["Wirable"], description: "Outputs a signal when at least one of its inputs is active.", tips: "Use to combine multiple triggers for a single output.", properties: { Inputs: "2", Logic: "A OR B → Output" }, wiring: [{ dir: "in", name: "Input A", desc: "First condition" }, { dir: "in", name: "Input B", desc: "Second condition" }, { dir: "out", name: "Output", desc: "High when either input is high" }] },
+        { id: 26, name: "NOT Gate", icon: "❌", category: "Wiring", tags: ["Wirable"], description: "Inverts a signal. When input is on, output is off, and vice versa.", tips: "Use to open a door when a lever is OFF instead of ON.", properties: { Inputs: "1", Logic: "NOT A → Output" }, wiring: [{ dir: "in", name: "Input", desc: "Signal to invert" }, { dir: "out", name: "Output", desc: "Inverted signal" }] },
+        { id: 27, name: "Timer", icon: "⏱️", category: "Wiring", tags: ["Wirable", "Configurable"], description: "Fires a pulse after a configurable delay. Can be set to loop repeatedly.", tips: "Set it to loop to create repeating events like flashing lights or timers.", properties: { Delay: "Configurable (seconds)", Mode: "One-shot or Loop" }, wiring: [{ dir: "in", name: "Start", desc: "Begins the countdown" }, { dir: "out", name: "Tick", desc: "Fires a pulse when timer completes" }] },
+        { id: 28, name: "Health Pack", icon: "❤️‍🩹", category: "Wiring", tags: ["Wirable", "Anchored", "Configurable"], description: "Restores a player's health when they touch it. Can be wired to only activate under certain conditions.", tips: "Configure the heal amount and cooldown. Place near danger zones.", properties: { Anchored: "Yes", HealAmount: "Configurable", Cooldown: "Configurable" }, wiring: [{ dir: "in", name: "Enable", desc: "Enables or disables the health pack" }] },
+
+        // HOUSE KIT
+        { id: 29, name: "Window", icon: "🪟", category: "House Kit", tags: ["Resizable"], description: "A transparent window pane. Allows light through while keeping the interior distinct.", tips: "Resize to match your wall dimensions perfectly.", properties: { Resizable: "Yes", Transparent: "Yes" }, wiring: null },
+        { id: 30, name: "Roof Tile", icon: "🏠", category: "House Kit", tags: ["Resizable"], description: "A pre-shaped roof tile block optimized for building house rooftops.", tips: "Combine with wedges for complex roof shapes.", properties: { Resizable: "Yes" }, wiring: null },
+        { id: 31, name: "Fence", icon: "🚧", category: "House Kit", tags: ["Resizable"], description: "A picket fence segment. Great for yards, gardens, and property borders.", tips: "Line them up in a row and resize uniformly for a clean border.", properties: { Resizable: "Yes" }, wiring: null },
+        { id: 32, name: "Mailbox", icon: "📫", category: "House Kit", tags: [], description: "A decorative mailbox for the front of houses and suburban builds.", tips: "Place at the end of a driveway for a classic suburban feel.", properties: {}, wiring: null },
+        { id: 33, name: "Fireplace", icon: "🔥", category: "House Kit", tags: ["Wirable"], description: "An animated fireplace that can be toggled on or off via wiring.", tips: "Wire to a lever on the wall for an immersive living room experience.", properties: { Animated: "Yes" }, wiring: [{ dir: "in", name: "Toggle", desc: "Turns the fire on or off" }] },
+        { id: 34, name: "Toilet", icon: "🚽", category: "House Kit", tags: ["Anchored"], description: "A bathroom toilet prop. Always anchored in place.", tips: "Pair with other bathroom props for a detailed interior.", properties: { Anchored: "Yes" }, wiring: null },
+        { id: 35, name: "Grill", icon: "🍖", category: "House Kit", tags: ["Anchored"], description: "A BBQ grill prop perfect for backyards and outdoor dining areas.", tips: "Place on a patio next to tables and chairs.", properties: { Anchored: "Yes" }, wiring: null },
+
+        // CASTLE KIT
+        { id: 36, name: "Castle Wall", icon: "🏰", category: "Castle Kit", tags: ["Resizable"], description: "A thick stone castle wall block, perfect for fortresses and medieval builds.", tips: "Pair with battlements on top for a classic castle look.", properties: { Resizable: "Yes", Material: "Stone" }, wiring: null },
+        { id: 37, name: "Battlement", icon: "🗼", category: "Castle Kit", tags: ["Resizable"], description: "The iconic crenelated top of a castle wall. Creates the classic battlemented silhouette.", tips: "Place along the top of castle walls with even spacing.", properties: { Resizable: "Yes" }, wiring: null },
+        { id: 38, name: "Castle Gate", icon: "🚪", category: "Castle Kit", tags: ["Wirable", "Anchored"], description: "A large wooden castle gate that opens when triggered by a wire signal.", tips: "Wire to a button or lever hidden inside the walls for a secret gate mechanic.", properties: { Anchored: "Yes" }, wiring: [{ dir: "in", name: "Open", desc: "Opens the castle gate" }] },
+        { id: 39, name: "Castle Tower", icon: "🏯", category: "Castle Kit", tags: [], description: "A pre-built cylindrical tower section for castle corners and fortifications.", tips: "Stack multiple tower sections and cap with a cone roof.", properties: { Resizable: "No" }, wiring: null },
+        { id: 40, name: "Torch Wall", icon: "🔦", category: "Castle Kit", tags: ["Anchored"], description: "A wall-mounted torch that emits a flickering light effect. Great for dungeon and castle interiors.", tips: "Place along dark corridors for an atmospheric effect.", properties: { Anchored: "Yes", Animated: "Yes (flicker)" }, wiring: null },
+
+        // SPACE KIT
+        { id: 41, name: "Spaceship Hull", icon: "🚀", category: "Space Kit", tags: ["Resizable"], description: "Smooth metallic hull panels designed for spacecraft and sci-fi builds.", tips: "Combine with neon blocks for a futuristic spaceship aesthetic.", properties: { Resizable: "Yes", Material: "Metal" }, wiring: null },
+        { id: 42, name: "Control Panel", icon: "🖥️", category: "Space Kit", tags: ["Wirable", "Anchored", "Configurable"], description: "A sci-fi control panel with buttons. Can be wired to activate systems in your build.", tips: "Wire to engines, doors, or lights to make an interactive cockpit.", properties: { Anchored: "Yes", Configurable: "Yes" }, wiring: [{ dir: "out", name: "Activated", desc: "Fires when a player interacts with the panel" }] },
+        { id: 43, name: "Airlock", icon: "🌌", category: "Space Kit", tags: ["Wirable", "Anchored"], description: "A two-stage door mechanism simulating an airlock. Opens inner or outer door independently.", tips: "Wire the inner and outer doors separately for a realistic two-stage airlock sequence.", properties: { Anchored: "Yes" }, wiring: [{ dir: "in", name: "Inner Open", desc: "Opens the inner door" }, { dir: "in", name: "Outer Open", desc: "Opens the outer door" }] },
+        { id: 44, name: "Neon Tube", icon: "🌟", category: "Space Kit", tags: ["Resizable", "Wirable"], description: "A glowing neon tube that emits colorful light. Resizable to any length.", tips: "Wire to make it flash or only glow under certain conditions.", properties: { Resizable: "Yes", Color: "Configurable" }, wiring: [{ dir: "in", name: "Toggle", desc: "Turns the neon light on or off" }] },
+
+        // VEHICLES
+        { id: 45, name: "Seat", icon: "🪑", category: "Vehicles", tags: ["Configurable"], description: "A seat that players can sit in. Can be configured to be part of a vehicle chassis.", tips: "Attach to a Chassis Block to build driveable vehicles.", properties: { Configurable: "Yes" }, wiring: null },
+        { id: 46, name: "Wheel", icon: "🛞", category: "Vehicles", tags: ["Wirable"], description: "A functional wheel for vehicle construction. Attach to an axle for a rolling vehicle.", tips: "Four wheels on a chassis with a seat makes a basic car.", properties: { Physics: "Enabled" }, wiring: [{ dir: "in", name: "Drive", desc: "Applies force to the wheel" }] },
+        { id: 47, name: "Chassis Block", icon: "🏎️", category: "Vehicles", tags: ["Resizable"], description: "The main body block for vehicle frames. Forms the structural base of cars, boats, and aircraft.", tips: "Build the frame first, then add wheels and seats.", properties: { Resizable: "Yes" }, wiring: null },
+
+        // DEADLY MACHINES
+        { id: 48, name: "Spike", icon: "⚠️", category: "Deadly Machines", tags: ["Deadly", "Resizable"], description: "A static spike that kills players on contact. Use for obstacle courses and traps.", tips: "Resize to make giant spikes or tiny hidden floor traps.", properties: { Resizable: "Yes", Damage: "Kills on contact" }, wiring: null },
+        { id: 49, name: "Lava", icon: "🌋", category: "Deadly Machines", tags: ["Deadly", "Resizable", "Wirable"], description: "Glowing lava that kills players who touch it. Can be toggled on and off with wiring.", tips: "Wire to a timer for an intermittent lava trap. Resize to fill pits.", properties: { Resizable: "Yes", Damage: "Kills on contact", Wirable: "Yes" }, wiring: [{ dir: "in", name: "Toggle", desc: "Turns lava damage on or off" }] },
+        { id: 50, name: "Teleport Trap", icon: "🌀", category: "Deadly Machines", tags: ["Deadly", "Wirable", "Configurable"], description: "Teleports a player to a configured location when they step on it. Can be used for traps or fast travel.", tips: "Configure the destination coordinates. Wire to disable it until triggered.", properties: { Configurable: "Yes (destination)", Damage: "None directly — teleports" }, wiring: [{ dir: "in", name: "Enable", desc: "Enables or disables the trap" }] },
+        { id: 51, name: "Microwave", icon: "📡", category: "Deadly Machines", tags: ["Deadly", "Wirable", "Anchored"], description: "Emits a lethal beam that kills players in its line of sight. Notorious as a griefing tool — use responsibly.", tips: "Wire to a button for a controlled turret. Banned as a griefing tool by the game's rules.", properties: { Anchored: "Yes", Damage: "Kills in beam range" }, wiring: [{ dir: "in", name: "Fire", desc: "Activates the lethal beam" }] },
+        { id: 52, name: "Bomb", icon: "💣", category: "Deadly Machines", tags: ["Deadly", "Wirable", "Configurable"], description: "An explosive that detonates after a countdown or when triggered by a wire signal.", tips: "Configure the blast radius and fuse timer. Wire to a button for manual detonation.", properties: { Configurable: "Yes (timer, radius)", Damage: "Area explosion" }, wiring: [{ dir: "in", name: "Detonate", desc: "Triggers immediate detonation" }] },
+
+        // MISCELLANEOUS
+        { id: 53, name: "Computer", icon: "🖥️", category: "Miscellaneous", tags: ["Anchored", "Configurable"], description: "A decorative computer prop that can display text or act as a terminal in your build.", tips: "Configure the screen text for flavor or storytelling.", properties: { Anchored: "Yes", Configurable: "Yes (screen text)" }, wiring: null },
+        { id: 54, name: "Nuclear Waste", icon: "☢️", category: "Miscellaneous", tags: ["Anchored", "Deadly"], description: "A glowing barrel of nuclear waste. Deadly to touch and permanently anchored.", tips: "Use sparingly — great for post-apocalyptic or industrial builds.", properties: { Anchored: "Yes", Damage: "Kills on contact" }, wiring: null },
+        { id: 55, name: "Storm Drain", icon: "🌧️", category: "Miscellaneous", tags: ["Anchored"], description: "A urban storm drain grate prop, great for city streets and road builds.", tips: "Place flush with a road surface for a realistic city detail.", properties: { Anchored: "Yes" }, wiring: null },
+        { id: 56, name: "Dumpster", icon: "🗑️", category: "Miscellaneous", tags: ["Anchored"], description: "A large dumpster prop perfect for alleyways, back streets, and urban builds.", tips: "Place in alleyways next to buildings for realistic city scenery.", properties: { Anchored: "Yes" }, wiring: null },
+        { id: 57, name: "Boombox", icon: "📻", category: "Miscellaneous", tags: ["Configurable", "Wirable"], description: "Plays an audio track by Roblox asset ID. Can be wired to play or stop based on game events.", tips: "Use for background music in themed server areas.", properties: { Configurable: "Yes (Audio ID)", Volume: "Configurable" }, wiring: [{ dir: "in", name: "Play/Stop", desc: "Starts or stops audio playback" }] },
+        { id: 58, name: "Gear Giver", icon: "🎁", category: "Miscellaneous", tags: ["Configurable", "Wirable"], description: "Gives players a specific gear (weapon or tool) when they touch it. Configure with a Roblox gear ID.", tips: "Use the ;gear all command to find gear IDs, or configure via the Config tool.", properties: { Configurable: "Yes (Gear ID)" }, wiring: [{ dir: "in", name: "Enable", desc: "Enables or disables the gear giver" }] },
+    ];
+
+    // ============ DOCS LOGIC ============
+    let activeCat = 'All';
+    let activeTags = new Set();
+    let searchQuery = '';
+
+    function getFilteredBlocks() {
+        return blocksData.filter(block => {
+            const matchesCat = activeCat === 'All' || block.category === activeCat;
+            const matchesTags = activeTags.size === 0 || [...activeTags].every(t => block.tags.includes(t));
+            const q = searchQuery.toLowerCase();
+            const matchesSearch = !q ||
+                block.name.toLowerCase().includes(q) ||
+                block.category.toLowerCase().includes(q) ||
+                block.description.toLowerCase().includes(q) ||
+                block.tags.some(t => t.toLowerCase().includes(q));
+            return matchesCat && matchesTags && matchesSearch;
+        });
+    }
+
+    function renderDocs() {
+        const filtered = getFilteredBlocks();
+        const grid = document.getElementById('docs-grid');
+        const noResults = document.getElementById('docs-no-results');
+        const count = document.getElementById('docs-count');
+
+        count.textContent = filtered.length + ' block' + (filtered.length !== 1 ? 's' : '');
+        grid.innerHTML = '';
+
+        if (filtered.length === 0) {
+            noResults.style.display = 'block';
+            return;
+        }
+        noResults.style.display = 'none';
+
+        filtered.forEach(block => {
+            const card = document.createElement('div');
+            card.className = 'block-card';
+            const tagHtml = block.tags.map(t => `<span class="block-tag tag-${t}">${t}</span>`).join('');
+            card.innerHTML = `
+                <span class="block-card-icon">${block.icon}</span>
+                <div class="block-card-name">${block.name}</div>
+                <div class="block-card-category">${block.category}</div>
+                <div class="block-card-desc">${block.description}</div>
+                <div class="block-tags">${tagHtml}</div>
+            `;
+            card.onclick = () => openBlockModal(block);
+            grid.appendChild(card);
+        });
+    }
+
+    // Category filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeCat = btn.dataset.cat;
+            renderDocs();
+        });
+    });
+
+    // Tag filter buttons
+    document.querySelectorAll('.tag-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tag = btn.dataset.tag;
+            if (activeTags.has(tag)) {
+                activeTags.delete(tag);
+                btn.classList.remove('active');
+            } else {
+                activeTags.add(tag);
+                btn.classList.add('active');
             }
+            renderDocs();
+        });
+    });
+
+    // Search
+    document.getElementById('docs-search').addEventListener('input', e => {
+        searchQuery = e.target.value;
+        renderDocs();
+    });
+
+    // Block Detail Modal
+    const blockModal = document.getElementById('block-modal');
+
+    function openBlockModal(block) {
+        document.getElementById('bm-icon').textContent = block.icon;
+        document.getElementById('bm-title').textContent = block.name;
+        document.getElementById('bm-cat').textContent = block.category;
+
+        const tagHtml = block.tags.map(t => `<span class="block-tag tag-${t}">${t}</span>`).join('');
+
+        let propsHtml = Object.entries(block.properties).map(([k, v]) =>
+            `<div class="block-detail-prop"><span class="block-detail-prop-key">${k}</span><span class="block-detail-prop-val">${v}</span></div>`
+        ).join('');
+
+        let wiringHtml = '';
+        if (block.wiring && block.wiring.length > 0) {
+            const ports = block.wiring.map(p =>
+                `<div class="wiring-port-row">
+                    <span class="port-dir ${p.dir === 'in' ? 'port-in' : 'port-out'}">${p.dir === 'in' ? 'IN' : 'OUT'}</span>
+                    <span class="port-name">${p.name}</span>
+                    <span class="port-desc">— ${p.desc}</span>
+                </div>`
+            ).join('');
+            wiringHtml = `
+                <div class="block-modal-section">
+                    <div class="block-modal-section-title">⚡ Wiring Ports</div>
+                    <div class="wiring-ports">${ports}</div>
+                </div>`;
         }
+
+        document.getElementById('bm-body').innerHTML = `
+            <div class="block-modal-section">
+                <div class="block-modal-section-title">Description</div>
+                <p style="margin:0;color:#ccc;">${block.description}</p>
+            </div>
+            ${tagHtml ? `<div class="block-modal-section"><div class="block-modal-section-title">Tags</div><div class="block-modal-tags">${tagHtml}</div></div>` : ''}
+            <div class="block-modal-section">
+                <div class="block-modal-section-title">Properties</div>
+                ${propsHtml || '<span style="color:#555">No special properties.</span>'}
+            </div>
+            ${wiringHtml}
+            <div class="block-modal-section">
+                <div class="block-modal-section-title">💡 Tips</div>
+                <p style="margin:0;color:#aaa;font-style:italic;">${block.tips}</p>
+            </div>
+        `;
+
+        blockModal.style.display = 'flex';
+    }
+
+    function closeBlockModal() { blockModal.style.display = 'none'; }
+    window.addEventListener('click', e => { if (e.target === blockModal) closeBlockModal(); });
+
+    // Initial render
+    renderDocs();
     </script>
 </body>
 </html>
