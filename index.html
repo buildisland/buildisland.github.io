@@ -120,12 +120,12 @@
             paint-order: stroke fill;
         }
 
-        .word-reborn {
-            background: linear-gradient(90deg, #00c8ff, #a040ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 6px rgba(0,0,0,0.5));
-        }
+.word-reborn {
+    background: linear-gradient(90deg, #00c8ff, #a040ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(2px 2px 0 #000) drop-shadow(-2px -2px 0 #000) drop-shadow(2px -2px 0 #000) drop-shadow(-2px 2px 0 #000);
+}
 
         .play-btns {
             display: flex;
@@ -155,19 +155,21 @@
         .bir-btn:active { transform: translateY(3px); }
         .bir-btn:hover  { filter: brightness(1.12); }
 
-        .btn-green {
-            background: #1e7a24;
-            color: var(--accent-green);
-            box-shadow: 0 5px 0 #0e4012, inset 0 1px 0 rgba(255,255,255,0.1);
-            -webkit-text-stroke: 1px #0e4012;
-        }
+.btn-green {
+    background: #22a02c;
+    color: #afffc2;
+    box-shadow: 0 6px 0 #0d5c16, 0 0 20px rgba(34,200,60,0.35);
+    -webkit-text-stroke: 1px #0d5c16;
+    text-shadow: 0 1px 0 #0a4011;
+}
 
-        .btn-blue {
-            background: #1a5c8a;
-            color: var(--blue-btn);
-            box-shadow: 0 5px 0 #0a3050, inset 0 1px 0 rgba(255,255,255,0.1);
-            -webkit-text-stroke: 1px #0a3050;
-        }
+.btn-blue {
+    background: #1a7abf;
+    color: #c0eeff;
+    box-shadow: 0 6px 0 #0a3f6e, 0 0 20px rgba(30,150,240,0.35);
+    -webkit-text-stroke: 1px #0a3f6e;
+    text-shadow: 0 1px 0 #082a50;
+}
 
         .btn-red {
             background: #7a1a1a;
