@@ -783,70 +783,10 @@ const ITEMS = [
 // Sample guides — `youtubeId` is optional. Leave null to show a text-only guide.
 const GUIDES = [
   {
-    slug:"daylight-cycle", title:"Create a time cycle", emoji:"🕒",
+    slug:"time-cycle", title:"Create a Time Cycle", emoji:"🕒",
     tags:["Wiring", "Tutorial"],
     summary:"How to create a day/night time cycle, video by @bigtrucker32",
-    description:`# Basic Day/Night Cycle Guide – Build Island Reborn
-
-This tutorial shows you how to create a simple automatic day/night cycle in **Build Island Reborn**.
-
-### Step 1: Place the core components
-
-Place the following:
-
-* 1 Energy Core
-* 1 Repeater Gate
-* 1 Variable Condition Gate
-* 1 Variable Editor
-
-Configure the **Repeater Gate**:
-
-* Interval 1: **0.1**
-* Interval 2: **0.1**
-
-Configure the **Variable Editor**:
-
-* Variable Name: **TimeVar**
-
-Configure the **Variable Condition Gate**:
-
-* Variable Name: **TimeVar**
-
-Wire everything together exactly as shown in the video.
-
-### Step 2: Add the time updater
-
-Place:
-
-* 1 Repeater Gate
-* 1 Command Gate
-
-Configure the **Repeater Gate**:
-
-* On Time: **30**
-* Off Time: **30**
-
-In the **Command Gate**, enter: '
-;time <%TimeVar>
-'
-
-### Step 3: Increase the time value
-
-Place another **Variable Editor** and configure it as follows:
-
-* Variable Name: **TimeVar**
-* Mode: **Increment**
-* Value: **1**
-
-Connect it exactly as shown in the video.
-
-Your day cycle should now automatically advance over time.
-
-**Need a working example?**
-You can find a more polished version in my public saves.
-
-**Roblox Username:** @bigtrucker32
-`,
+    description:'',
     youtubeId:"Gwd1PvM7RFI"
   },
 ];
@@ -1099,7 +1039,7 @@ function viewGuidesGrid(){
   `).join('');
   wrap.innerHTML = `
     <h1 class="panel-title">Guides</h1>
-    <p class="panel-subtitle">Sample entries below — add your own by editing the GUIDES list in the code.</p>
+    <p class="panel-subtitle">Game guides and tutorials</p>
     <div class="card-grid">${cards}</div>
   `;
   return wrap;
