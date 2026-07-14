@@ -1,1055 +1,1177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Build Island Reborn</title>
-    <link rel="icon" href="favicon.png" type="image/png">
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --sky-top: #3a9fd8;
-            --sky-mid: #7ec8e8;
-            --sky-low: #c0e8f5;
-            --panel-bg: rgba(18, 18, 24, 0.97);
-            --panel-header-bg: rgba(10, 10, 14, 0.98);
-            --panel-border: #2a2a3a;
-            --green-btn: #2dc937;
-            --green-btn-shadow: #1a8f22;
-            --green-btn-dark: #145c18;
-            --blue-btn: #5bbfee;
-            --blue-btn-shadow: #2a8fb5;
-            --red-btn: #e03030;
-            --red-btn-shadow: #9a1a1a;
-            --gold: #f5c542;
-            --text-white: #ffffff;
-            --text-muted: #9a9ab0;
-            --card-bg: #0e0e18;
-            --card-border: #252535;
-            --card-hover: #1a1a2a;
-            --accent-blue: #00aaff;
-            --accent-green: #1aff6e;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Fredoka', sans-serif;
-            background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 45%, var(--sky-low) 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            color: var(--text-white);
-        }
-
-        /* ── NAV ── */
-        nav {
-            background: rgba(8, 8, 14, 0.97);
-            border-bottom: 2px solid #000;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: stretch;
-            position: sticky;
-            top: 0;
-            z-index: 200;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: #888;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 18px;
-            font-weight: 600;
-            padding: 16px 22px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s, background 0.2s;
-            border-bottom: 3px solid transparent;
-            letter-spacing: 0.3px;
-        }
-
-        .nav-link:hover { color: #ddd; background: rgba(255,255,255,0.04); }
-        .nav-link.active { color: #fff; border-bottom-color: var(--accent-green); }
-
-        /* ── PAGES ── */
-        .page { display: none; flex: 1; }
-        .page.active { display: flex; flex-direction: column; animation: fadeUp 0.25s ease; }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── PLAY PAGE ── */
-        #play {
-            align-items: center;
-            justify-content: center;
-            min-height: calc(100vh - 55px);
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .stamp-icon {
-            width: 90px;
-            margin-bottom: 0px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%,100% { transform: translateY(0); }
-            50%      { transform: translateY(-8px); }
-        }
-
-        .title-block { margin-bottom: 36px; }
-
-        .game-title {
-            font-size: 72px;
-            font-weight: 700;
-            line-height: 1.1;
-            letter-spacing: 1px;
-        }
-
-        .word-white {
-            color: #fff;
-            -webkit-text-stroke: 6px rgba(0,0,0,0.5);
-            paint-order: stroke fill;
-        }
-
-.word-reborn {
-    background: linear-gradient(90deg, #00c8ff, #a040ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: url(#outline);
-}
-
-        .play-btns {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .bir-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-family: 'Fredoka', sans-serif;
-            font-weight: 700;
-            font-size: 28px;
-            padding: 12px 48px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            transition: transform 0.1s, filter 0.15s;
-            min-width: 200px;
-        }
-
-        .bir-btn:active { transform: translateY(3px); }
-        .bir-btn:hover  { filter: brightness(1.12); }
-
-.btn-green {
-    background: #22a02c;
-    color: #afffc2;
-    box-shadow: 0 6px 0 #0d5c16, 0 0 20px rgba(34,200,60,0.35);
-    -webkit-text-stroke: 1px #0d5c16;
-    text-shadow: 0 1px 0 #0a4011;
-}
-
-.btn-blue {
-    background: #1a7abf;
-    color: #c0eeff;
-    box-shadow: 0 6px 0 #0a3f6e, 0 0 20px rgba(30,150,240,0.35);
-    -webkit-text-stroke: 1px #0a3f6e;
-    text-shadow: 0 1px 0 #082a50;
-}
-
-        .btn-red {
-            background: #7a1a1a;
-            color: #ff6060;
-            box-shadow: 0 5px 0 #3d0d0d, inset 0 1px 0 rgba(255,255,255,0.1);
-            -webkit-text-stroke: 1px #3d0d0d;
-            font-size: 20px;
-            padding: 10px 32px;
-            min-width: 0;
-        }
-
-        .version-tag {
-            color: var(--gold);
-            font-size: 22px;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        /* ── PANEL (shared) ── */
-        .page-wrap {
-            padding: 32px 20px;
-            flex: 1;
-            max-width: 1100px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .bir-panel {
-            background: var(--panel-bg);
-            border-radius: 8px;
-            border: 2px solid #000;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-            overflow: hidden;
-            margin-bottom: 24px;
-        }
-
-        .bir-panel-header {
-            background: var(--panel-header-bg);
-            border-bottom: 2px solid #000;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .bir-panel-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 0.5px;
-        }
-
-        .bir-panel-body { padding: 24px; }
-
-        /* ── DOCS PAGE ── */
-        .docs-filter-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            align-items: center;
-        }
-
-        .docs-search {
-            flex: 1;
-            min-width: 180px;
-            background: #0a0a12;
-            border: 1px solid var(--panel-border);
-            color: #fff;
-            padding: 9px 14px;
-            border-radius: 5px;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .docs-search:focus { border-color: var(--accent-blue); }
-
-        .filter-pill {
-            background: #1a1a28;
-            border: 1.5px solid #333;
-            color: #999;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-            user-select: none;
-        }
-        .filter-pill:hover { border-color: #555; color: #ccc; }
-        .filter-pill.active { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
-
-        /* ── CARDS GRID ── */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 18px;
-        }
-
-        .entry-card {
-            background: var(--card-bg);
-            border: 2px solid var(--card-border);
-            border-radius: 7px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: border-color 0.2s, transform 0.15s, background 0.2s;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .entry-card:hover {
-            border-color: var(--accent-blue);
-            background: var(--card-hover);
-            transform: translateY(-3px);
-        }
-
-        .card-thumb {
-            width: 100%;
-            height: 160px;
-            background: #111;
-            object-fit: cover;
-            display: block;
-            border-bottom: 1px solid #1a1a2a;
-        }
-
-        .card-thumb-placeholder {
-            width: 100%;
-            height: 160px;
-            background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 52px;
-            border-bottom: 1px solid #1a1a2a;
-        }
-
-        .card-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
-
-        .card-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .card-tag {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 3px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .tag-block     { background: #002244; color: #55aaff; border: 1px solid #114477; }
-        .tag-tool      { background: #1a2200; color: #88dd00; border: 1px solid #336600; }
-        .tag-feature   { background: #220044; color: #cc66ff; border: 1px solid #550088; }
-        .tag-wiring    { background: #221100; color: #ffaa00; border: 1px solid #664400; }
-        .tag-update    { background: #002222; color: #00cccc; border: 1px solid #006666; }
-        .tag-guide     { background: #220022; color: #ff66cc; border: 1px solid #661144; }
-
-        .card-date { font-size: 12px; color: #555; margin-left: auto; }
-
-        .card-title {
-            font-size: 19px;
-            font-weight: 700;
-            color: #fff;
-            line-height: 1.2;
-        }
-
-        .card-desc {
-            font-size: 14px;
-            color: var(--text-muted);
-            line-height: 1.5;
-            flex: 1;
-        }
-
-        .no-results {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 50px;
-            color: #444;
-            font-size: 18px;
-        }
-
-        /* ── MODAL ── */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 500;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            backdrop-filter: blur(4px);
-        }
-        .modal-overlay.open { display: flex; }
-
-        .modal-box {
-            background: var(--panel-bg);
-            border: 2px solid #111;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 640px;
-            max-height: 85vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-            animation: fadeUp 0.2s ease;
-        }
-
-        .modal-header {
-            background: var(--panel-header-bg);
-            border-bottom: 2px solid #000;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-        }
-
-        .modal-header h3 { font-size: 22px; font-weight: 700; color: #fff; }
-
-        .modal-close {
-            background: var(--red-btn);
-            border: 2px solid #7a0000;
-            color: #fff;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 16px;
-            font-weight: 700;
-            width: 30px; height: 30px;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: filter 0.15s;
-        }
-        .modal-close:hover { filter: brightness(1.2); }
-
-        .modal-body { overflow-y: auto; padding: 20px; }
-
-        .modal-img {
-            width: 100%;
-            border-radius: 5px;
-            margin-bottom: 16px;
-            max-height: 260px;
-            object-fit: cover;
-            border: 1px solid #222;
-        }
-
-        .modal-tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
-        .modal-date-label { font-size: 13px; color: #555; }
-
-        .modal-content-body {
-            color: #ccc;
-            font-size: 15px;
-            line-height: 1.65;
-        }
-
-        .modal-content-body h4 { color: var(--accent-blue); font-size: 16px; margin: 14px 0 6px; }
-        .modal-content-body ul { padding-left: 20px; }
-        .modal-content-body li { margin-bottom: 4px; }
-        .modal-content-body p { margin-bottom: 10px; }
-        .modal-content-body strong { color: #fff; }
-
-        /* ── RULES PAGE ── */
-        .rules-section {
-            background: #080810;
-            border: 1.5px solid #1e1e30;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            overflow: hidden;
-        }
-
-        .rules-section-head {
-            background: #0d0d1c;
-            padding: 12px 18px;
-            border-bottom: 1px solid #1e1e30;
-            font-size: 19px;
-            font-weight: 700;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .rules-section-body { padding: 16px 18px; }
-
-        .rule-block { margin-bottom: 16px; }
-        .rule-block:last-child { margin-bottom: 0; }
-
-        .rule-level {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--accent-blue);
-            margin-bottom: 4px;
-        }
-
-        .rule-list {
-            color: #999;
-            font-size: 14px;
-            padding-left: 18px;
-            margin-bottom: 8px;
-        }
-
-        .rule-list li { margin-bottom: 3px; }
-
-        .rule-result {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .result-none  { color: #1aff6e; }
-        .result-warn  { color: #ffaa00; }
-        .result-ban   { color: #ff4444; }
-        .result-perm  { color: #ff2222; font-weight: 700; }
-
-        blockquote {
-            border-left: 3px solid var(--accent-blue);
-            padding-left: 12px;
-            color: #777;
-            font-style: italic;
-            font-size: 14px;
-            margin: 8px 0;
-        }
-
-        /* ── COMMUNITY PAGE ── */
-        #community .page-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-        .community-card {
-            text-align: center;
-            padding: 60px 40px;
-            background: #080810;
-            border: 1.5px solid #1e1e30;
-            border-radius: 6px;
-            max-width: 500px;
-            width: 100%;
-        }
-
-        .community-card h2 { font-size: 32px; margin-bottom: 10px; }
-        .community-card p  { color: #999; font-size: 17px; margin-bottom: 28px; }
-
-        .btn-discord {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background: #5865F2;
-            color: #fff;
-            text-decoration: none;
-            padding: 14px 36px;
-            border-radius: 6px;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 22px;
-            font-weight: 700;
-            box-shadow: 0 5px 0 #3a45cc;
-            transition: filter 0.15s, transform 0.1s;
-        }
-        .btn-discord:hover { filter: brightness(1.1); }
-        .btn-discord:active { transform: translateY(3px); box-shadow: 0 2px 0 #3a45cc; }
-
-        /* ── SCROLLBAR ── */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0a0a12; }
-        ::-webkit-scrollbar-thumb { background: #2a2a40; border-radius: 3px; }
-
-        @media (max-width: 600px) {
-            .game-title { font-size: 44px; }
-            .bir-btn { font-size: 22px; padding: 10px 28px; min-width: 150px; }
-            .nav-link { font-size: 14px; padding: 14px 12px; }
-            .cards-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Island Reborn - Roblox Game Maker</title>
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#3fa9f5;
+    --sky-mid:#8fd6ff;
+    --sky-bottom:#f4fbff;
+    --sun-glow:#fff4c8;
+    --panel:rgba(24,34,46,0.58);
+    --panel-light:rgba(255,255,255,0.14);
+    --panel-border:rgba(255,255,255,0.35);
+    --ink:#132433;
+    --white:#ffffff;
+    --accent-blue:#3fb6ff;
+    --accent-blue-deep:#1c8de0;
+    --green:#7CFF7C;
+    --orange:#FFB347;
+    --red:#FF5C5C;
+    --discord:#5865F2;
+    --discord-deep:#4752c4;
+    --radius:22px;
+    --font-display:'Fredoka', sans-serif;
+    --font-body:'Poppins', sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    color:var(--white);
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+
+  /* ---------- LIVING SKY BACKGROUND ---------- */
+  .sky{
+    position:fixed;
+    inset:0;
+    z-index:-3;
+    background:linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 48%, var(--sky-bottom) 100%);
+  }
+  .sun{
+    position:fixed;
+    top:-12vw;
+    right:-8vw;
+    width:38vw;
+    height:38vw;
+    max-width:520px;
+    max-height:520px;
+    border-radius:50%;
+    background:radial-gradient(circle, var(--sun-glow) 0%, rgba(255,244,200,0.55) 45%, rgba(255,244,200,0) 72%);
+    filter:blur(6px);
+    z-index:-2;
+    animation:sunPulse 9s ease-in-out infinite;
+  }
+  @keyframes sunPulse{
+    0%,100%{transform:scale(1);opacity:1;}
+    50%{transform:scale(1.06);opacity:0.85;}
+  }
+  .cloud{
+    position:fixed;
+    z-index:-1;
+    background:rgba(255,255,255,0.55);
+    border-radius:50%;
+    filter:blur(14px);
+    opacity:0.8;
+    animation-name:drift;
+    animation-timing-function:linear;
+    animation-iteration-count:infinite;
+  }
+  @keyframes drift{
+    from{transform:translateX(-20vw);}
+    to{transform:translateX(120vw);}
+  }
+  .c1{width:220px;height:70px;top:14%;animation-duration:52s;}
+  .c2{width:160px;height:55px;top:28%;animation-duration:70s;animation-delay:-20s;opacity:0.6;}
+  .c3{width:280px;height:85px;top:60%;animation-duration:85s;animation-delay:-40s;opacity:0.5;}
+  .c4{width:130px;height:45px;top:75%;animation-duration:60s;animation-delay:-10s;opacity:0.65;}
+
+  @media (prefers-reduced-motion: reduce){
+    .sun,.cloud,.logo-float,.bob{animation:none !important;}
+    *{transition-duration:0.01ms !important;}
+  }
+
+  /* ---------- LAYOUT SHELL ---------- */
+  #app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 20px 60px;
+  }
+
+  .topbar{
+    position:relative;
+    width:100%;
+    max-width:1100px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+    animation:fadeDown 0.5s ease both;
+  }
+  .home-btn{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    color:var(--white);
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:15px;
+    padding:10px 18px;
+    border-radius:999px;
+    cursor:pointer;
+    backdrop-filter:blur(8px);
+    transition:transform .18s ease, background .18s ease;
+  }
+  .home-btn:hover{transform:translateY(-2px) scale(1.03); background:rgba(24,34,46,0.75);}
+  .home-btn:active{transform:translateY(0) scale(0.98);}
+  .breadcrumb{
+    font-family:var(--font-body);
+    font-size:14px;
+    color:rgba(255,255,255,0.85);
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    padding:9px 16px;
+    border-radius:999px;
+    backdrop-filter:blur(8px);
+  }
+  .breadcrumb b{color:var(--white); font-weight:600;}
+
+  main{
+    width:100%;
+    max-width:1100px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .view{
+    width:100%;
+    animation:viewIn 0.45s cubic-bezier(.2,.9,.3,1) both;
+  }
+  @keyframes viewIn{
+    from{opacity:0; transform:translateY(16px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes fadeDown{
+    from{opacity:0; transform:translateY(-10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---------- HOME / MAIN MENU ---------- */
+  .home-view{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:78vh;
+    text-align:center;
+  }
+  .logo-float{
+    width:min(340px, 62vw);
+    animation:bob 4.5s ease-in-out infinite;
+    filter:drop-shadow(0 18px 30px rgba(10,40,70,0.25));
+  }
+  @keyframes bob{
+    0%,100%{transform:translateY(0px) rotate(0deg);}
+    50%{transform:translateY(-14px) rotate(-1deg);}
+  }
+  .menu-grid{
+    margin-top:46px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    width:min(560px, 90vw);
+  }
+  .menu-btn{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:22px;
+    letter-spacing:0.3px;
+    padding:20px 10px;
+    border-radius:16px;
+    border:2px solid rgba(255,255,255,0.35);
+    background:var(--panel);
+    color:var(--white);
+    cursor:pointer;
+    backdrop-filter:blur(6px);
+    box-shadow:0 8px 0 rgba(0,0,0,0.18), 0 14px 24px rgba(10,40,70,0.18);
+    transition:transform .16s ease, box-shadow .16s ease, background .16s ease;
+  }
+  .menu-btn:hover{transform:translateY(-4px); box-shadow:0 12px 0 rgba(0,0,0,0.18), 0 20px 30px rgba(10,40,70,0.22);}
+  .menu-btn:active{transform:translateY(4px); box-shadow:0 4px 0 rgba(0,0,0,0.18);}
+  .menu-btn.play{color:#8CFF8C;}
+  .menu-btn.create{color:#7FD8FF;}
+  .menu-btn.secondary{font-size:17px; padding:14px 10px; background:rgba(24,34,46,0.42);}
+
+  /* ---------- GENERIC PANEL / CARD LIST (Rules-style) ---------- */
+  .panel-title{
+    font-family:var(--font-display);
+    font-size:clamp(28px,4vw,40px);
+    font-weight:700;
+    margin:4px 0 6px;
+    text-align:center;
+  }
+  .panel-subtitle{
+    text-align:center;
+    color:rgba(255,255,255,0.85);
+    margin:0 0 26px;
+    font-weight:300;
+    max-width:640px;
+  }
+
+  .list-panel{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    backdrop-filter:blur(10px);
+    overflow:hidden;
+    box-shadow:0 16px 40px rgba(8,30,55,0.25);
+  }
+  .list-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:18px 22px;
+    cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    transition:background .15s ease, padding-left .15s ease;
+  }
+  .list-row:last-child{border-bottom:none;}
+  .list-row:hover{background:rgba(255,255,255,0.08); padding-left:28px;}
+  .list-emoji{
+    font-size:30px;
+    width:46px;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .list-text b{
+    font-family:var(--font-display);
+    font-size:19px;
+    font-weight:600;
+    display:block;
+  }
+  .list-text span{
+    font-size:14px;
+    color:rgba(255,255,255,0.75);
+    font-weight:300;
+  }
+
+  /* ---------- RULE DETAIL ---------- */
+  .detail-panel{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    backdrop-filter:blur(10px);
+    padding:32px clamp(20px,4vw,44px);
+    box-shadow:0 16px 40px rgba(8,30,55,0.25);
+  }
+  .rule-detail-title{
+    font-family:var(--font-display);
+    font-size:clamp(24px,3.4vw,32px);
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  .rule-detail-sub{
+    font-weight:300;
+    font-style:italic;
+    color:rgba(255,255,255,0.8);
+    margin:0 0 22px;
+    padding-bottom:18px;
+    border-bottom:1px solid rgba(255,255,255,0.12);
+  }
+  .tier-heading{
+    font-family:var(--font-display);
+    font-size:19px;
+    font-weight:600;
+    margin:22px 0 10px;
+  }
+  .rule-list{
+    margin:0 0 12px;
+    padding-left:22px;
+    font-weight:300;
+    line-height:1.7;
+  }
+  .rule-list li{margin-bottom:2px;}
+  .punishment{
+    display:inline-block;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:15px;
+    padding:8px 16px;
+    border-radius:999px;
+    margin-top:4px;
+  }
+  .p-green{color:#0f3d0f; background:var(--green);}
+  .p-orange{color:#4a2c00; background:var(--orange);}
+  .p-red{color:#4a0000; background:var(--red);}
+  .rule-note{
+    margin-top:22px;
+    padding-top:16px;
+    border-top:1px solid rgba(255,255,255,0.12);
+    font-size:13.5px;
+    font-style:italic;
+    font-weight:300;
+    color:rgba(255,255,255,0.7);
+  }
+
+  /* ---------- WIKI HUB ---------- */
+  .hub-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+    width:100%;
+    max-width:760px;
+  }
+  .hub-card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    padding:36px 24px;
+    text-align:center;
+    cursor:pointer;
+    backdrop-filter:blur(10px);
+    transition:transform .2s ease, box-shadow .2s ease;
+    box-shadow:0 10px 26px rgba(8,30,55,0.2);
+  }
+  .hub-card:hover{transform:translateY(-8px) scale(1.02); box-shadow:0 20px 40px rgba(8,30,55,0.3);}
+  .hub-icon{font-size:52px; margin-bottom:12px; display:block;}
+  .hub-card h3{font-family:var(--font-display); font-size:24px; margin:0 0 8px;}
+  .hub-card p{font-weight:300; font-size:14px; color:rgba(255,255,255,0.78); margin:0;}
+
+  /* ---------- CARD GRID (items / guides) ---------- */
+  .filter-row{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:26px;
+  }
+  .tag-pill{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13px;
+    padding:8px 18px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,0.4);
+    background:rgba(255,255,255,0.08);
+    color:var(--white);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .tag-pill.active, .tag-pill:hover{background:var(--accent-blue); border-color:var(--accent-blue); color:#04263b;}
+
+  .card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(180px,1fr));
+    gap:18px;
+    width:100%;
+  }
+  .item-card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:18px;
+    padding:20px 14px 16px;
+    text-align:center;
+    cursor:pointer;
+    backdrop-filter:blur(8px);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .item-card:hover{transform:translateY(-6px) rotate(-0.5deg); box-shadow:0 16px 30px rgba(8,30,55,0.3);}
+  .item-card .thumb{
+    width:64px; height:64px; margin:0 auto 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:38px;
+    background:rgba(255,255,255,0.1);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .item-card .thumb img{width:100%; height:100%; object-fit:cover;}
+  .item-card h4{font-family:var(--font-display); font-size:16px; margin:0 0 8px; font-weight:600;}
+  .mini-tags{display:flex; flex-wrap:wrap; gap:5px; justify-content:center;}
+  .mini-tag{
+    font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:999px;
+    background:rgba(255,255,255,0.14); color:rgba(255,255,255,0.85);
+  }
+
+  .item-detail-head{display:flex; gap:22px; align-items:center; flex-wrap:wrap; margin-bottom:18px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.12);}
+  .item-detail-thumb{
+    width:100px; height:100px; border-radius:20px; flex-shrink:0;
+    background:rgba(255,255,255,0.1);
+    display:flex; align-items:center; justify-content:center; font-size:56px;
+    overflow:hidden;
+  }
+  .item-detail-thumb img{width:100%; height:100%; object-fit:cover;}
+  .item-detail-body{font-weight:300; line-height:1.8; font-size:15px;}
+  .item-detail-body p{margin:0 0 14px;}
+
+  .video-wrap{
+    position:relative; width:100%; padding-top:56.25%; border-radius:16px; overflow:hidden; margin:18px 0;
+    background:rgba(0,0,0,0.35);
+  }
+  .video-wrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+  .no-video{
+    padding:26px; text-align:center; font-weight:300; font-style:italic; color:rgba(255,255,255,0.6);
+    background:rgba(255,255,255,0.06); border-radius:16px; margin:18px 0;
+  }
+
+  /* ---------- COMMUNITY ---------- */
+  .discord-block{
+    width:100%;
+    background:linear-gradient(135deg, rgba(88,101,242,0.35), rgba(24,34,46,0.6));
+    border:1px solid rgba(88,101,242,0.5);
+    border-radius:var(--radius);
+    padding:34px 28px;
+    text-align:center;
+    margin-bottom:34px;
+    backdrop-filter:blur(10px);
+  }
+  .discord-block p{font-weight:300; max-width:520px; margin:14px auto 22px; color:rgba(255,255,255,0.9);}
+  .discord-btn{
+    display:inline-flex; align-items:center; gap:10px;
+    font-family:var(--font-display); font-weight:600; font-size:17px;
+    background:var(--discord); color:var(--white);
+    padding:14px 30px; border-radius:999px; border:none; cursor:pointer;
+    box-shadow:0 8px 0 var(--discord-deep), 0 14px 26px rgba(20,20,60,0.3);
+    transition:transform .15s ease, box-shadow .15s ease;
+    text-decoration:none;
+  }
+  .discord-btn:hover{transform:translateY(-3px);}
+  .discord-btn:active{transform:translateY(4px); box-shadow:0 4px 0 var(--discord-deep);}
+
+  .staff-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px,1fr));
+    gap:18px;
+    width:100%;
+  }
+  .staff-card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:18px;
+    padding:22px 18px;
+    text-align:center;
+    backdrop-filter:blur(8px);
+    transition:transform .18s ease;
+  }
+  .staff-card:hover{transform:translateY(-5px);}
+  .staff-avatar{
+    width:78px; height:78px; border-radius:50%; margin:0 auto 14px;
+    background:linear-gradient(135deg, var(--accent-blue), var(--discord));
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:700; font-size:24px;
+    overflow:hidden; border:2px solid rgba(255,255,255,0.4);
+  }
+  .staff-avatar img{width:100%; height:100%; object-fit:cover;}
+  .staff-card h4{font-family:var(--font-display); font-size:18px; margin:0 0 2px;}
+  .staff-role{font-size:12.5px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:#8fe3ff; margin-bottom:10px;}
+  .staff-meta{font-size:13px; font-weight:300; color:rgba(255,255,255,0.85); line-height:1.6;}
+  .staff-meta b{font-weight:600; color:var(--white);}
+
+  footer{
+    margin-top:50px;
+    font-size:12.5px;
+    color:rgba(255,255,255,0.6);
+    font-weight:300;
+    text-align:center;
+  }
+
+  @media (max-width:560px){
+    .menu-grid{grid-template-columns:1fr 1fr; gap:12px;}
+    .hub-grid{grid-template-columns:1fr;}
+    .item-detail-head{flex-direction:column; text-align:center;}
+  }
+</style>
 </head>
 <body>
 
-<nav>
-    <a href="#play"      class="nav-link active">🏠 Play</a>
-    <a href="#docs"      class="nav-link">📘 Docs</a>
-    <a href="#rules"     class="nav-link">🛡️ Rules</a>
-    <a href="#updates"   class="nav-link">📝 Updates</a>
-    <a href="#community" class="nav-link">🌍 Community</a>
-</nav>
+<div class="sky"></div>
+<div class="sun"></div>
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+<div class="cloud c3"></div>
+<div class="cloud c4"></div>
 
-    <svg width="0" height="0" style="position:absolute">
-  <defs>
-    <filter id="outline">
-      <feMorphology operator="dilate" radius="3" in="SourceAlpha" result="expanded"/>
-      <feFlood flood-color="#000000" result="color"/>
-      <feComposite in="color" in2="expanded" operator="in" result="outline"/>
-      <feMerge>
-        <feMergeNode in="outline"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
-</svg>
-<!-- ═══════════════ PLAY ═══════════════ -->
-<div id="play" class="page">
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px 20px;text-align:center;min-height:calc(100vh - 55px);">
-        <img src="favicon.png" alt="Stamp" class="stamp-icon" onerror="this.style.display='none'">
-        <div class="title-block">
-            <div class="game-title">
-                <span class="word-white">Build Island </span><span class="word-reborn">Reborn</span>
-            </div>
-        </div>
-        <div class="play-btns">
-            <a href="https://www.roblox.com/games/122517558607766" target="_blank" class="bir-btn btn-green">Create</a>
-            <a href="https://www.roblox.com/games/122517558607766" target="_blank" class="bir-btn btn-blue">Join</a>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════ DOCS ═══════════════ -->
-<div id="docs" class="page">
-    <div class="page-wrap">
-        <div class="bir-panel">
-            <div class="bir-panel-header">
-                <h2>📘 Documentation</h2>
-            </div>
-            <div class="bir-panel-body">
-                <div class="docs-filter-row">
-                    <input class="docs-search" id="docsSearch" type="text" placeholder="Search documentation...">
-                    <span class="filter-pill active" data-filter="All">All</span>
-                    <span class="filter-pill" data-filter="Block">Blocks</span>
-                    <span class="filter-pill" data-filter="Wiring">Wiring</span>
-                    <span class="filter-pill" data-filter="Tool">Tools</span>
-                    <span class="filter-pill" data-filter="Feature">Features</span>
-                    <span class="filter-pill" data-filter="Guide">Guides</span>
-                </div>
-                <div class="cards-grid" id="docsGrid"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════ RULES ═══════════════ -->
-<div id="rules" class="page">
-    <div class="page-wrap">
-        <div class="bir-panel">
-            <div class="bir-panel-header"><h2>🛡️ Game Rules</h2></div>
-<div class="bir-panel-body">
-
-    <div class="rules-section">
-        <div class="rules-section-head">⚔️ 1. Griefing</div>
-        <div class="rules-section-body">
-            <blockquote>'to grief' — to ruin other players' experiences</blockquote>
-
-            <div class="rule-block">
-                <div class="rule-level">Minor Griefing</div>
-                <ul class="rule-list">
-                    <li>Building on top of everyone's builds</li>
-                    <li>Placing spikes around the spawn area</li>
-                </ul>
-                <div class="rule-result result-none">✓ No action (can be prevented by server owners)</div>
-            </div>
-
-            <div class="rule-block">
-                <div class="rule-level">Standard Griefing</div>
-                <ul class="rule-list">
-                    <li>Builds that kill all players on spawn (teleport traps, microwaves)</li>
-                </ul>
-                <div class="rule-result result-ban">⛔ 14-day ban</div>
-            </div>
-
-            <div class="rule-block">
-                <div class="rule-level">Major Griefing</div>
-                <ul class="rule-list">
-                    <li>Anything that makes the server unplayable (crashers, laggers)</li>
-                </ul>
-                <div class="rule-result result-perm">🚫 Permanent ban</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="rules-section">
-        <div class="rules-section-head">🔞 2. NSFW Content</div>
-        <div class="rules-section-body">
-
-            <div class="rule-block">
-                <div class="rule-level">Minor</div>
-                <ul class="rule-list">
-                    <li>Slightly suggestive builds, ambiguous shapes</li>
-                </ul>
-                <div class="rule-result result-warn">⚠️ 7-day ban → <span class="result-perm">Permanent on 2nd offense</span></div>
-            </div>
-
-            <div class="rule-block">
-                <div class="rule-level">Major</div>
-                <ul class="rule-list">
-                    <li>Detailed NSFW builds or audios</li>
-                    <li>Hosting servers dedicated to NSFW content</li>
-                </ul>
-                <div class="rule-result result-perm">🚫 Permanent ban</div>
-            </div>
-
-        </div>
-    </div>
-
-    <div class="rules-section">
-        <div class="rules-section-head">💻 3. Exploiting</div>
-        <div class="rules-section-body">
-
-            <div class="rule-block">
-                <div class="rule-level">Minor</div>
-                <ul class="rule-list">
-                    <li>Third-party tools with little to no advantage</li>
-                </ul>
-                <div class="rule-result result-none">✓ No action</div>
-            </div>
-
-            <div class="rule-block">
-                <div class="rule-level">Major</div>
-                <ul class="rule-list">
-                    <li>Injecting code to grief servers (e.g. flinging everyone)</li>
-                </ul>
-                <div class="rule-result result-perm">🚫 Permanent ban</div>
-            </div>
-
-        </div>
-    </div>
-
-    <div class="rules-section">
-        <div class="rules-section-head">🐛 4. Abusing Glitches</div>
-        <div class="rules-section-body">
-            <ul class="rule-list">
-                <li>E.g. using a glitch to kick/ban moderators from your server</li>
-            </ul>
-            <div class="rule-result result-ban">⛔ 7-day ban → <span class="result-perm">Permanent on 2nd offense</span></div>
-        </div>
-    </div>
-
-    <div class="rules-section">
-        <div class="rules-section-head">📢 5. Degrading the Game's Reputation</div>
-        <div class="rules-section-body">
-            <ul class="rule-list">
-                <li>Spreading misinformation or destructive criticism that drives players away</li>
-            </ul>
-            <div class="rule-result result-ban">⛔ 3-day ban → <span class="result-perm">Permanent on 2nd offense</span></div>
-        </div>
-    </div>
-
-    <div class="rules-section">
-        <div class="rules-section-head">📋 6. Restricted Symbolism</div>
-        <div class="rules-section-body">
-            <ul class="rule-list">
-                <li>Blatantly building extremist signs such as the Swastika</li>
-            </ul>
-            <div class="rule-result result-ban">⛔ 5-day ban → <span class="result-perm">Permanent on 2nd offense</span></div>
-        </div>
-    </div>
-
-    <div class="rules-section">
-        <div class="rules-section-head">🤥 7. False Reports</div>
-        <div class="rules-section-body">
-            <ul class="rule-list">
-                <li>Falsely reporting a player by any means. Using the in-game panel or wasting the moderators' time.</li>
-            </ul>
-            <div class="rule-result result-ban">⛔ 1-day ban → 7-day ban → <span class="result-perm">Permanent on 3rd offense</span></div>
-        </div>
-    </div>
-
-    <div class="rules-section">
-        <div class="rules-section-head">📜 8. Roblox TOS</div>
-        <div class="rules-section-body">
-            <ul class="rule-list">
-                <li>Mods can ban players for any rule not listed here that violates Roblox Terms of Service</li>
-            </ul>
-        </div>
-    </div>
-
-</div>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════ UPDATES ═══════════════ -->
-<div id="updates" class="page">
-    <div class="page-wrap">
-        <div class="bir-panel">
-            <div class="bir-panel-header"><h2>📝 Update Log</h2></div>
-            <div class="bir-panel-body">
-                <div class="cards-grid" id="updatesGrid"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════ COMMUNITY ═══════════════ -->
-<div id="community" class="page">
-    <div class="page-wrap" style="display:flex;align-items:center;justify-content:center;min-height:60vh;">
-        <div class="bir-panel" style="width:100%;max-width:500px;">
-            <div class="bir-panel-header"><h2>🌍 Community Hub</h2></div>
-            <div class="bir-panel-body" style="text-align:center;padding:48px 32px;">
-                <div style="font-size:64px;margin-bottom:16px;">🏝️</div>
-                <h2 style="font-size:30px;margin-bottom:10px;">Join the Conversation!</h2>
-                <p style="color:#888;font-size:16px;margin-bottom:28px;line-height:1.5;">Share your builds, report bugs, suggest features, and chat with other creators.</p>
-                <a href="https://discord.gg/jXd7CaWRyq" target="_blank" class="btn-discord">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-                    Join our Discord
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════════ MODAL ═══════════════ -->
-<div class="modal-overlay" id="modal">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3 id="modal-title">Title</h3>
-            <button class="modal-close" onclick="closeModal()">✕</button>
-        </div>
-        <div class="modal-body">
-            <img id="modal-img" class="modal-img" src="" alt="" style="display:none;">
-            <div class="modal-tag-row">
-                <span id="modal-tag" class="card-tag"></span>
-                <span id="modal-date" class="modal-date-label"></span>
-            </div>
-            <div class="modal-content-body" id="modal-body"></div>
-        </div>
-    </div>
+<div id="app">
+  <div class="topbar" id="topbar" style="display:none;"></div>
+  <main id="main"></main>
+  <footer>Build Island Reborn is a Roblox experience. Not affiliated with or endorsed by Roblox Corporation.</footer>
 </div>
 
 <script>
-// ── ROUTING ──
-function route() {
-    const hash = window.location.hash.slice(1) || 'play';
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    const page = document.getElementById(hash) || document.getElementById('play');
-    page.classList.add('active');
-    const link = document.querySelector(`.nav-link[href="#${page.id}"]`);
-    if (link) link.classList.add('active');
-}
-window.addEventListener('hashchange', route);
-window.addEventListener('DOMContentLoaded', route);
+/* ============================= DATA ============================= */
 
-// ── MODAL ──
-function openModal(data) {
-    const mi = document.getElementById('modal-img');
-    if (data.image) { mi.src = data.image; mi.style.display = 'block'; mi.onerror = () => mi.style.display = 'none'; }
-    else { mi.style.display = 'none'; }
-    document.getElementById('modal-title').textContent = data.title;
-    const tagEl = document.getElementById('modal-tag');
-    tagEl.textContent = data.tag || '';
-    tagEl.className = 'card-tag tag-' + (data.tag || '').toLowerCase();
-    document.getElementById('modal-date').textContent = data.date || '';
-    document.getElementById('modal-body').innerHTML = data.body;
-    document.getElementById('modal').classList.add('open');
-}
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
-document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+const RULES = [
+  {
+    slug:"griefing", emoji:"⚔️", title:"Griefing",
+    shortDesc:"Intentional disruption of other players' builds or gameplay",
+    html:`
+      <div class="rule-detail-title">⚔️ Griefing</div>
+      <p class="rule-detail-sub">Actions that intentionally disrupt or destroy other players' gameplay experience</p>
 
-// ── CARD BUILDER ──
-function makeCard(item) {
-    const card = document.createElement('div');
-    card.className = 'entry-card';
-    const thumb = item.image
-        ? `<img class="card-thumb" src="${item.image}" alt="${item.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-          + `<div class="card-thumb-placeholder" style="display:none">${item.icon || '📄'}</div>`
-        : `<div class="card-thumb-placeholder">${item.icon || '📄'}</div>`;
-    const tagClass = 'tag-' + (item.tag || '').toLowerCase();
-    card.innerHTML = `
-        ${thumb}
-        <div class="card-body">
-            <div class="card-meta">
-                <span class="card-tag ${tagClass}">${item.tag || ''}</span>
-                ${item.date ? `<span class="card-date">${item.date}</span>` : ''}
-            </div>
-            <div class="card-title">${item.title}</div>
-            <div class="card-desc">${item.preview || ''}</div>
-        </div>`;
-    card.onclick = () => openModal(item);
-    return card;
-}
+      <div class="tier-heading">🟢 Minor Griefing</div>
+      <ul class="rule-list">
+        <li>Building on top of other players' creations</li>
+        <li>Placing traps or objects around spawn</li>
+      </ul>
+      <span class="punishment p-green">✓ No punishment (server admins can prevent this easily)</span>
 
-// ══════════════════════════════════════════
-// DOCS DATA — edit this to add entries!
-// ══════════════════════════════════════════
-const docsData = [
-    {
-        tag: "Tool", icon: "🛠️",
-        title: "Stamper Tool",
-        preview: "The primary building tool. Browse sets, select a block, and click to place it in the world.",
-        date: "",
-        body: `<p>The <strong>Stamper Tool</strong> is your main building tool in Build Island Reborn. It lets you browse all available block sets and place them anywhere in the world.</p>
-               <h4>How to use</h4>
-               <ul><li>Open the Stamper from your toolbar</li><li>Browse categories on the left panel</li><li>Click a block to select it</li><li>Click in the world to place it</li><li>Use the Copy feature to duplicate an existing block</li></ul>
-               <h4>Tips</h4>
-               <ul><li>You can rotate blocks before placing with R</li></ul>`
-    },
-    {
-        tag: "Tool", icon: "🗑️",
-        title: "Delete Tool",
-        preview: "Delete individual blocks or clear everything you've placed with Clear All.",
-        body: `<p>The <strong>Remover Tool</strong> lets you remove any block you've placed.</p>
-               <h4>Options</h4>
-               <ul><li><strong>Single remove</strong> — click any block to delete it</li><li><strong>Clear All</strong> — removes every block placed by your stamper</li><li><strong>Clear Debris</strong> — removes only unanchored or unwelded parts</li></ul>`
-    },
-    {
-        tag: "Tool", icon: "⚙️",
-        title: "Config Tool",
-        preview: "Customise block settings like text on signs, gear IDs on gear givers, and more.",
-        body: `<p>The <strong>Config Tool</strong> opens a configuration panel for blocks that support custom settings.</p>
-               <h4>Configurable blocks include</h4>
-               <ul><li>Text Sign — set any display message</li><li>Gear Giver — enter a Roblox gear ID</li><li>Teleporter — set linked teleporter pair</li><li>Conveyor — set direction and speed</li></ul>`
-    },
-    {
-        tag: "Tool", icon: "📐",
-        title: "Resize Tool",
-        preview: "Scale any block up or down along any axis to create unique shapes and structures.",
-        body: `<p>The <strong>Resize Tool</strong> allows you to scale blocks. Click and drag the handles on any axis to change size.</p>
-               <h4>Notes</h4>
-               <ul><li>Not all blocks are resizable — some like Castle Door are locked</li><li>The Grass Trapdoor is one of the few special resizable blocks</li></ul>`
-    },
-    {
-        tag: "Tool", icon: "⚡",
-        title: "Wiring Tool",
-        preview: "Connect wiring blocks together to build electrical circuits, doors, traps, and more.",
-        body: `<p>The <strong>Wiring Tool</strong> lets you draw connections between compatible blocks.</p>
-               <h4>How it works</h4>
-               <ul><li>Click a trigger block (Button, Lever, Detector) to start a wire</li><li>Click a receiver block (Door, Lightbulb, Conveyor...) to complete the connection</li><li>Signals travel through Wire blocks</li></ul>
-               <h4>Signal types</h4>
-               <ul><li><strong>Pulse</strong> — brief on signal (Button)</li><li><strong>Continuous</strong> — held on/off (Lever)</li></ul>`
-    },
-    {
-        tag: "Tool", icon: "🎨",
-        title: "Paint Tool",
-        preview: "Change the material and color of any block in your build with a full color picker.",
-        body: `<p>The <strong>Paint Tool</strong> is the newest addition to the toolset. It lets you change both the material texture and RGB color of any block.</p>
-               <h4>Features</h4>
-               <ul><li>Full color picker with hex input</li><li>Material selector (SmoothPlastic, Wood, Brick, Metal...)</li><li>Paint multiple blocks at once by holding Shift</li></ul>`
-    },
-    {
-        tag: "Block", icon: "🟦",
-        title: "Basic Building Blocks",
-        preview: "The core shapes: Block, Wedge, Cylinder, Sphere, Corner Wedge, and Pyramid — in all materials.",
-        body: `<p>Basic building blocks are the foundation of every build. Each shape comes in multiple material variants.</p>
-               <h4>Available shapes</h4>
-               <ul><li><strong>Block</strong> — standard cube, ID: 15278566816</li><li><strong>Wedge</strong> — sloped triangle, ID: 15278569498</li><li><strong>Cylinder</strong> — round column, ID: 15278571016</li><li><strong>Sphere</strong> — ball shape, ID: 15278578220</li><li><strong>Corner Wedge</strong> — diagonal corner, ID: 15278572893</li><li><strong>Pyramid</strong> — four-sided peak, ID: 15278580141</li></ul>
-               <h4>Material variants</h4>
-               <p>Each shape is available in: SmoothPlastic, Wood, Brick, Cobblestone, Granite, Marble, Neon, Metal, and more.</p>`
-    },
-    {
-        tag: "Block", icon: "🚪",
-        title: "House Kit",
-        preview: "Doors, windows, stairs, roof tiles, and ceiling lights for building realistic homes.",
-        body: `<p>The <strong>House Kit</strong> category contains pre-built architectural pieces optimised for building houses and interiors.</p>
-               <h4>Included blocks</h4>
-               <ul><li><strong>Door</strong> — wirable swinging door (ID: 15280220445)</li><li><strong>Two-Way Door</strong> — anchored, opens from both sides</li><li><strong>Window</strong> — glass panel (ID: 15280222801)</li><li><strong>Roof Tile</strong> — sloped tile (ID: 15280225114)</li><li><strong>Stairs</strong> — prebuilt staircase (ID: 15280228330)</li><li><strong>Ceiling Light</strong> — anchored light fixture (ID: 15280231000)</li><li><strong>Toilet, Computer, Grill, Dumpster</strong> — decorative props</li></ul>`
-    },
-    {
-        tag: "Wiring", icon: "🔌",
-        title: "Wiring Blocks",
-        preview: "Buttons, levers, detectors, wires, lights and more for building electrical circuits.",
-        body: `<p>Wiring blocks let you create interactive builds ranging from simple light switches to complex contraptions.</p>
-               <h4>Triggers (send signals)</h4>
-               <ul><li><strong>Button</strong> — pulse on press (ID: 15280120033)</li><li><strong>Lever</strong> — toggle on/off (ID: 15280122561)</li><li><strong>Detector</strong> — triggers when player walks over (ID: 15280127440)</li></ul>
-               <h4>Receivers (react to signals)</h4>
-               <ul><li><strong>Lightbulb</strong> — glows when powered (ID: 15280124890)</li><li><strong>Door</strong> — opens/closes on signal</li><li><strong>Conveyor (Wired)</strong> — activates movement when powered</li></ul>
-               <h4>Other</h4>
-               <ul><li><strong>Wire</strong> — connects blocks (ID: 15280130012)</li><li>More wiring blocks available via <code>import/morewiring</code></li></ul>`
-    },
-    {
-        tag: "Block", icon: "💀",
-        title: "Deadly Machines",
-        preview: "Spikes, bombs, microwaves and conveyors — use responsibly or face a ban.",
-        body: `<p><strong>Deadly Machines</strong> are blocks that deal damage or kill players. Misuse can result in a ban — see the Rules page.</p>
-               <h4>Blocks</h4>
-               <ul><li><strong>Spike</strong> — damages on touch (ID: 15280350020)</li><li><strong>Bomb</strong> — explodes after delay (ID: 15280352440)</li><li><strong>Microwave</strong> — instantly kills anyone inside (ID: 15280354900)</li><li><strong>Conveyor</strong> — moves players in a direction (ID: 15280357200)</li></ul>
-               <p style="color:#ff4444;margin-top:10px;">⚠️ Using these to grief other players will result in a ban.</p>`
-    },
-    {
-        tag: "Feature", icon: "🌐",
-        title: "Metaverse Navigation",
-        preview: "Browse and join public servers created by other players from the main menu.",
-        body: `<p>The <strong>Metaverse Navigation</strong> window lets you see all publicly listed Build Island Reborn servers and join them directly.</p>
-               <h4>Features</h4>
-               <ul><li>Sort by Recent or Most Players</li><li>See the server name, owner, player count, and rank badge</li><li>Click the green play button to join instantly</li></ul>
-               <h4>For server owners</h4>
-               <ul><li>Use <code>list/</code> and <code>unlist/</code> commands to control visibility</li><li>Set a custom server name from the Admin Panel</li></ul>`
-    },
-    {
-        tag: "Feature", icon: "📦",
-        title: "Imports & Modkits",
-        preview: "Add extra blocks and features to your server using the import/ command in chat.",
-        body: `<p><strong>Imports</strong> add external block sets to your server. Type <code>import/[name]</code> in chat to add them.</p>
-               <h4>Popular modkits</h4>
-               <ul><li><code>import/morewiring</code> — binary & memory wiring blocks</li><li><code>import/starburst</code> — sci-fi blocks and gear givers</li><li><code>import/keycard</code> — keycard reader & giver</li><li><code>import/npcs</code> — add NPCs to your server</li><li><code>import/essentialx</code> — physics blocks and utilities</li><li><code>import/cityprops</code> — town and road props</li><li><code>import/currency</code> — currency-themed blocks</li></ul>
-               <p style="color:#777;margin-top:10px;font-size:13px;">Note: Imported blocks may behave unexpectedly as they are not fully optimised for Build Island Reborn.</p>`
-    },
-    {
-        tag: "Guide", icon: "🏆",
-        title: "Rank System",
-        preview: "Earn ranks by building and getting votes from other players. Rank 1 unlocks the Stamper.",
-        body: `<p>Build Island Reborn uses a rank system to reward active builders.</p>
-               <h4>How to rank up</h4>
-               <ul><li>Build impressive structures that earn votes from other players</li><li>Higher ranked players unlock more block categories</li><li><strong>Rank 1 (Builder)</strong> — minimum to receive a Stamper Tool</li></ul>
-               <h4>Server ranks</h4>
-               <ul><li>The first player to join a server becomes the <strong>Owner</strong></li><li>Owners gain access to all Build Island Admin Commands</li><li>Use <code>rank/[player]/[rank]</code> to give others elevated permissions</li></ul>`
-    },
-    {
-        tag: "Guide", icon: "⌨️",
-        title: "Server Commands",
-        preview: "Admin commands for server owners — from kicking players to changing the atmosphere.",
-        body: `<p>Build Island uses a version of Person299's Admin Commands. All commands are case-sensitive.</p>
-               <h4>Common commands</h4>
-               <ul><li><code>rank/@player/rank</code> — set a player's rank</li><li><code>ban/@player</code> — ban a player</li><li><code>kick/@player</code> — kick a player</li><li><code>maxusers/#</code> — limit server player count</li><li><code>ambient/R#/G#/B#</code> — change atmosphere color</li><li><code>blockrank/Category/Block/rank</code> — restrict a block to a minimum rank</li><li><code>list/</code> / <code>unlist/</code> — show/hide server from Metaverse</li><li><code>windspeed x y z</code> — change wind direction and speed</li></ul>`
-    },
+      <div class="tier-heading">🟡 Standard Griefing</div>
+      <ul class="rule-list">
+        <li>Spawn-kill builds or repeated forced death traps</li>
+        <li>Structures designed to annoy or disrupt large portions of the server</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 1-day ban</span>
+
+      <div class="tier-heading">🔴 Major Griefing</div>
+      <ul class="rule-list">
+        <li>Builds or systems that intentionally break server functionality</li>
+        <li>Crash scripts, extreme lag machines, or gameplay disabling contraptions</li>
+      </ul>
+      <span class="punishment p-red">🚫 7-day ban or higher depending on severity</span>
+
+      <p class="rule-note">Note: High part-count builds are not automatically major griefing if manageable via server settings (cooldowns or block rank restrictions).</p>
+    `
+  },
+  {
+    slug:"nsfw-content", emoji:"🔞", title:"NSFW Content",
+    shortDesc:"Inappropriate NSFW content in builds or servers",
+    html:`
+      <div class="rule-detail-title">🔞 NSFW Content</div>
+
+      <div class="tier-heading">🟡 Minor</div>
+      <ul class="rule-list">
+        <li>Suggestive builds</li>
+        <li>Ambiguous or inappropriate shapes</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 1-day ban</span>
+
+      <div class="tier-heading">🔴 Major</div>
+      <ul class="rule-list">
+        <li>Explicit NSFW builds or content</li>
+        <li>Servers dedicated to NSFW material</li>
+      </ul>
+      <span class="punishment p-red">🚫 2-week ban → Permanent on 2nd offense</span>
+    `
+  },
+  {
+    slug:"blood-violence", emoji:"🩸", title:"Blood & Violence",
+    shortDesc:"Prohibited blood or realistic violence in builds or servers",
+    html:`
+      <div class="rule-detail-title">🩸 Blood & Violence</div>
+
+      <div class="tier-heading">🟡 Minor</div>
+      <ul class="rule-list">
+        <li>Minor/unrealistic blood elements</li>
+        <li>Unintentional inclusion of realistic combat details</li>
+      </ul>
+      <span class="punishment p-orange">⛔ Warning or 1-day ban</span>
+
+      <div class="tier-heading">🔴 Major</div>
+      <ul class="rule-list">
+        <li>Explicit blood systems or realistic violence</li>
+        <li>Servers dedicated to gory, bloody, or violent material</li>
+      </ul>
+      <span class="punishment p-red">🚫 1-week ban → Permanent on 2nd offense</span>
+    `
+  },
+  {
+    slug:"exploiting", emoji:"💻", title:"Exploiting",
+    shortDesc:"Using external tools or code to gain unfair advantage",
+    html:`
+      <div class="rule-detail-title">💻 Exploiting</div>
+      <ul class="rule-list">
+        <li>Using injected code or unauthorized third-party tools</li>
+        <li>Gaining unfair advantages or disrupting servers through exploits</li>
+      </ul>
+      <span class="punishment p-red">🚫 Permanent ban</span>
+    `
+  },
+  {
+    slug:"abusing-glitches", emoji:"🐛", title:"Abusing Glitches",
+    shortDesc:"Using unintended game mechanics for advantage or disruption",
+    html:`
+      <div class="rule-detail-title">🐛 Abusing Glitches</div>
+      <ul class="rule-list">
+        <li>Using bugs to kick or ban moderators</li>
+        <li>Duplicating in-game currency or items (e.g. Stamps)</li>
+        <li>Exploiting unintended mechanics for advantage</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 2-day ban</span>
+    `
+  },
+  {
+    slug:"misinformation", emoji:"📢", title:"Misinformation",
+    shortDesc:"Spreading false or harmful claims about the game",
+    html:`
+      <div class="rule-detail-title">📢 Misinformation</div>
+      <ul class="rule-list">
+        <li>Spreading false claims about the game or staff</li>
+        <li>Intentional harmful or misleading statements (including politically driven misinformation)</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 1-day ban → Permanent on 2nd offense</span>
+    `
+  },
+  {
+    slug:"inappropriate-symbolism", emoji:"📋", title:"Inappropriate Symbolism",
+    shortDesc:"Use of extremist or prohibited symbols",
+    html:`
+      <div class="rule-detail-title">📋 Inappropriate Symbolism</div>
+      <ul class="rule-list">
+        <li>Building or displaying extremist symbols (e.g. swastikas or similar content)</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 1-day ban</span>
+    `
+  },
+  {
+    slug:"false-reports", emoji:"🤥", title:"False Reports",
+    shortDesc:"Misusing reporting systems or fabricating evidence",
+    html:`
+      <div class="rule-detail-title">🤥 False Reports</div>
+      <ul class="rule-list">
+        <li>Fabricating evidence</li>
+        <li>Forging screenshots or false accusations in official channels</li>
+      </ul>
+      <span class="punishment p-red">🚫 Permanent forum ban</span>
+    `
+  },
+  {
+    slug:"alt-accounts", emoji:"👥", title:"Alt Accounts",
+    shortDesc:"Using alternate accounts to bypass rules or farm progress",
+    html:`
+      <div class="rule-detail-title">👥 Alt Accounts</div>
+      <ul class="rule-list">
+        <li>Using alts to farm currency or progression</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 3-day ban on main account</span>
+      <span class="punishment p-red">🚫 Permanent ban on all alt accounts</span>
+
+      <div class="tier-heading" style="margin-top:20px;">Evading Punishments</div>
+      <ul class="rule-list">
+        <li>Using alts to evade punishments</li>
+      </ul>
+      <span class="punishment p-red">🚫 Extended or permanent main account ban</span>
+    `
+  },
+  {
+    slug:"bypassing", emoji:"🔤", title:"Bypassing",
+    shortDesc:"Avoiding chat or content filters",
+    html:`
+      <div class="rule-detail-title">🔤 Bypassing</div>
+
+      <div class="tier-heading">Text</div>
+      <ul class="rule-list">
+        <li>Circumventing filters on signs or text displays</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 2-day ban</span>
+
+      <div class="tier-heading">Audio</div>
+      <ul class="rule-list">
+        <li>Using bypassed or inappropriate sounds</li>
+      </ul>
+      <span class="punishment p-orange">⛔ 3-day ban</span>
+
+      <p class="rule-note">Disclaimer: Bypassing text filters in the in-built Roblox chat is not bannable. This can be reported through the Roblox player reporting menu.</p>
+    `
+  },
+  {
+    slug:"roblox-tos", emoji:"📜", title:"Roblox Terms of Service",
+    shortDesc:"Enforcement of Roblox platform rules",
+    html:`
+      <div class="rule-detail-title">📜 Roblox Terms of Service</div>
+      <ul class="rule-list">
+        <li>Moderators may enforce bans for any behavior violating Roblox Terms of Service not listed here</li>
+      </ul>
+      <p class="rule-note">
+        Exceptions:<br>
+        • Chat violations → handled via Roblox report system<br>
+        • Avatar violations → handled via Roblox report system
+      </p>
+    `
+  },
+  {
+    slug:"ban-escalation", emoji:"📊", title:"Ban Escalation",
+    shortDesc:"Repeated violations increase punishment severity",
+    html:`
+      <div class="rule-detail-title">📊 Ban Escalation System</div>
+      <ul class="rule-list">
+        <li>1st ban → normal duration</li>
+        <li>2nd ban → 2× duration</li>
+        <li>3rd ban → 4× duration</li>
+        <li>4th ban → permanent ban</li>
+      </ul>
+    `
+  }
 ];
 
-// ══════════════════════════════════════════
-// UPDATES DATA — edit this to add updates!
-// ══════════════════════════════════════════
-const updatesData = [
-    {
-        tag: "Update", icon: "🔧",
-        title: "Quality of Life Update",
-        date: "Oct 12, 2023",
-        preview: "New wiring tools, save fixes, UI improvements, and Herobrine removal.",
-        image: "",
-        body: `<h4>What's new</h4>
-               <ul><li>Added new wiring tools to the Sets panel</li><li>Fixed saving issues on private islands</li><li>UI improvements for the Admin Panel</li><li>Performance improvements for large builds</li><li>Removed Herobrine</li></ul>`
-    },
-    {
-        tag: "Update", icon: "🏷️",
-        title: "The Stamp Update",
-        date: "Sep 5, 2023",
-        preview: "Stamps currency, the Robux Shop, and brand new cosmetic titles are here!",
-        image: "",
-        body: `<h4>New features</h4>
-               <ul><li>🏷️ <strong>Stamps</strong> introduced as a new earnable currency</li><li>Added the <strong>Robux Shop</strong> for premium cosmetics</li><li>New cosmetic <strong>titles</strong> available to equip</li><li>Stamp leaderboard added to the Community Hub</li></ul>`
-    },
-    {
-        tag: "Update", icon: "🎉",
-        title: "Launch Day!",
-        date: "Aug 1, 2023",
-        preview: "Build Island Reborn is live! Built from scratch with better performance and features.",
-        image: "",
-        body: `<p>Welcome to <strong>Build Island Reborn</strong>! We've rebuilt the classic experience from the ground up to provide a safe, fun, and creative environment for all builders.</p>
-               <h4>What's included at launch</h4>
-               <ul><li>All classic block categories</li><li>Metaverse Navigation to join public servers</li><li>HD Admin integration</li><li>Modkit import system</li><li>Build sharing</li></ul>
-               <p>Thank you for playing — go build something awesome! 🏝️</p>`
-    },
+// Sample wiki items — edit / add freely. `image` can be a URL; leave empty to use `emoji`.
+const ITEMS = [
+  {
+    slug: "block",
+    title: "Block",
+    emoji: "🧱",
+    image: "",
+    tags: ["Block"],
+    summary: "The foundation of every build.",
+    description:
+      "The Basic Block is the simplest building piece on Build Island. It snaps cleanly to the grid, resizes freely, and comes in every color in the palette. Most builds start here before layering on wiring and tools."
+  },
+  {
+    slug: "wiring",
+    title: "Wiring",
+    emoji: "⚡",
+    image: "",
+    tags: ["Wiring"],
+    summary: "The system behind circuits and triggers.",
+    description:
+      "Wiring blocks power doors, traps, lights, and other interactive builds. They connect through signals and always require the Wire Tool to be configured or wired up. This is the core category for building functional logic in Build Island." 
+  },
+  {
+    slug: "wire-tool",
+    title: "Wire Tool",
+    emoji: "🛠️",
+    image: "",
+    tags: ["Tool", "Wiring"],
+    summary: "The tool used to connect wiring blocks.",
+    description:
+      "The Wire Tool is one of the main tools in Build Island. It lets you wire blocks together so signals can flow between sources, gates, and outputs. Use it whenever you want buttons, levers, detectors, and other wiring blocks to interact."
+  },
+  {
+    slug: "stamper-tool",
+    title: "Stamper Tool",
+    emoji: "📐",
+    image: "",
+    tags: ["Tool", "Block"],
+    summary: "The main block placement tool.",
+    description:
+      "The Stamper Tool is the primary building tool in Build Island Reborn. It lets you browse available block sets and place them anywhere in the world, making it the main way to create structures and layouts."
+  },
+  {
+    slug: "lever",
+    title: "Wiring Lever",
+    emoji: "🕹️",
+    image: "",
+    tags: ["Wiring"],
+    summary: "A simple on/off signal source.",
+    description:
+      "The Wiring Lever is a toggleable interface block that changes state when clicked. It is commonly used as a basic input for doors, gates, lights, and other circuit-driven builds."
+  },
+  {
+    slug: "button",
+    title: "Button",
+    emoji: "🔘",
+    image: "",
+    tags: ["Wiring"],
+    summary: "A trigger that sends a signal when pressed.",
+    description:
+      "The Button is an interface block that activates when stepped on or clicked, depending on the variant. It is useful for quick triggers, hidden mechanisms, and compact circuit designs."
+  },
+  {
+    slug: "door",
+    title: "Wiring Door",
+    emoji: "🚪",
+    image: "",
+    tags: ["Wiring"],
+    summary: "A door that opens through wiring.",
+    description:
+      "The Wiring Door opens when activated by a signal. It is a common output block for builds that need automated entry, hidden passages, or timed entrances."
+  }
 ];
 
-// ── RENDER DOCS ──
-let docsFilter = 'All';
-function renderDocs() {
-    const q = document.getElementById('docsSearch').value.toLowerCase();
-    const grid = document.getElementById('docsGrid');
-    grid.innerHTML = '';
-    const filtered = docsData.filter(d => {
-        const matchFilter = docsFilter === 'All' || d.tag === docsFilter;
-        const matchQ = !q || d.title.toLowerCase().includes(q) || d.preview.toLowerCase().includes(q);
-        return matchFilter && matchQ;
-    });
-    if (!filtered.length) { grid.innerHTML = '<div class="no-results">No entries found.</div>'; return; }
-    filtered.forEach(item => grid.appendChild(makeCard(item)));
+// Sample guides — `youtubeId` is optional. Leave null to show a text-only guide.
+const GUIDES = [
+  {
+    slug:"daylight-cycle", title:"Create a time cycle", emoji:"🕒",
+    tags:["Wiring", "Tutorial"],
+    summary:"How to create a day/night time cycle, video by @bigtrucker32",
+    description:`# Basic Day/Night Cycle Guide – Build Island Reborn
+
+This tutorial shows you how to create a simple automatic day/night cycle in **Build Island Reborn**.
+
+### Step 1: Place the core components
+
+Place the following:
+
+* 1 Energy Core
+* 1 Repeater Gate
+* 1 Variable Condition Gate
+* 1 Variable Editor
+
+Configure the **Repeater Gate**:
+
+* Interval 1: **0.1**
+* Interval 2: **0.1**
+
+Configure the **Variable Editor**:
+
+* Variable Name: **TimeVar**
+
+Configure the **Variable Condition Gate**:
+
+* Variable Name: **TimeVar**
+
+Wire everything together exactly as shown in the video.
+
+### Step 2: Add the time updater
+
+Place:
+
+* 1 Repeater Gate
+* 1 Command Gate
+
+Configure the **Repeater Gate**:
+
+* On Time: **30**
+* Off Time: **30**
+
+In the **Command Gate**, enter: '
+;time <%TimeVar>
+'
+
+### Step 3: Increase the time value
+
+Place another **Variable Editor** and configure it as follows:
+
+* Variable Name: **TimeVar**
+* Mode: **Increment**
+* Value: **1**
+
+Connect it exactly as shown in the video.
+
+Your day cycle should now automatically advance over time.
+
+**Need a working example?**
+You can find a more polished version in my public saves.
+
+**Roblox Username:** @bigtrucker32
+`,
+    youtubeId:"Gwd1PvM7RFI"
+  },
+];
+
+const STAFF = [
+  {name:"Saintfire", role:"Dev", roblox:"Saintfire15", discord:"saintfire15", image:"https://cdn.discordapp.com/avatars/1447326956956946686/2d8c621001da6b36ac5699e5e1b48885.png?size=1024"},
+  {name:"Iskerdin", role:"Mod", roblox:"iskerdin", discord:"thesevenseas__", image:"https://cdn.discordapp.com/avatars/1480665509677498739/2d8c621001da6b36ac5699e5e1b48885.png?size=1024"},
+  {name:"TheMisterForest", role:"Mod", roblox:"TheMisterForest", discord:"TheMisterForest", image:"https://cdn.discordapp.com/avatars/1504761050539626507/2d8c621001da6b36ac5699e5e1b48885.png?size=1024"},
+  {name:"AnnymausKool", role:"Mod", roblox:"AnnymausKool", discord:"val_is_tired_", image:"https://cdn.discordapp.com/avatars/1048793036634726470/2d8c621001da6b36ac5699e5e1b48885.png?size=1024"},
+  {name:"Uranium", role:"Jr Mod", roblox:"augustomegaultrapro", discord:"auguusss__84613", image:"https://cdn.discordapp.com/avatars/1107817074237116526/2d8c621001da6b36ac5699e5e1b48885.png?size=1024"}
+];
+
+const ROBLOX_URL = "https://www.roblox.com/games/122517558607766/Build-Island-Reborn";
+const DISCORD_URL = "https://discord.gg/cgxUVgp6wV";
+const BASE_TITLE = "Build Island Reborn - Roblox Game Maker";
+
+/* ============================= HELPERS ============================= */
+
+function esc(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+function initials(name){
+  return name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+}
+function avatarHTML(person){
+  if(person.image){
+    return `<img src="${esc(person.image)}" alt="${esc(person.name)}">`;
+  }
+  return initials(person.name);
+}
+function thumbHTML(entry){
+  if(entry.image){
+    return `<img src="${esc(entry.image)}" alt="${esc(entry.title)}">`;
+  }
+  return entry.emoji || '❔';
+}
+function setTitle(suffix){
+  document.title = suffix ? `${BASE_TITLE} — ${suffix}` : BASE_TITLE;
+}
+function go(hash){
+  window.location.hash = hash;
 }
 
-document.getElementById('docsSearch').addEventListener('input', renderDocs);
-document.querySelectorAll('#docs .filter-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-        document.querySelectorAll('#docs .filter-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        docsFilter = pill.dataset.filter;
-        renderDocs();
-    });
-});
+/* ============================= ROUTER ============================= */
 
-// ── RENDER UPDATES ──
-function renderUpdates() {
-    const grid = document.getElementById('updatesGrid');
-    updatesData.forEach(item => grid.appendChild(makeCard(item)));
+function parseHash(){
+  let h = window.location.hash.slice(1); // remove '#'
+  if(h.startsWith('/')) h = h.slice(1);
+  return h.split('/').filter(Boolean);
 }
 
-window.addEventListener('DOMContentLoaded', () => { renderDocs(); renderUpdates(); });
+function render(){
+  const parts = parseHash();
+  const topbar = document.getElementById('topbar');
+  const mainEl = document.getElementById('main');
+  mainEl.innerHTML = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  if(parts.length === 0){
+    topbar.style.display = 'none';
+    setTitle('');
+    mainEl.appendChild(viewHome());
+    return;
+  }
+
+  topbar.style.display = 'flex';
+
+  if(parts[0] === 'rules' && parts.length === 1){
+    setBreadcrumb('Rules');
+    setTitle('Game Rules');
+    mainEl.appendChild(viewRulesList());
+  } else if(parts[0] === 'rules' && parts.length === 2){
+    const rule = RULES.find(r=>r.slug===parts[1]);
+    if(!rule){ mainEl.appendChild(view404()); return; }
+    setBreadcrumb(`Rules <span style="opacity:.5">›</span> <b>${esc(rule.title)}</b>`);
+    setTitle(rule.title);
+    mainEl.appendChild(viewRuleDetail(rule));
+  } else if(parts[0] === 'create' && parts.length === 1){
+    setBreadcrumb('Create');
+    setTitle('Wiki');
+    mainEl.appendChild(viewWikiHub());
+  } else if(parts[0] === 'create' && parts[1] === 'items' && parts.length === 2){
+    setBreadcrumb('Create <span style="opacity:.5">›</span> <b>Items</b>');
+    setTitle('Items');
+    mainEl.appendChild(viewItemsGrid());
+  } else if(parts[0] === 'create' && parts[1] === 'items' && parts.length === 3){
+    const item = ITEMS.find(i=>i.slug===parts[2]);
+    if(!item){ mainEl.appendChild(view404()); return; }
+    setBreadcrumb(`Create <span style="opacity:.5">›</span> Items <span style="opacity:.5">›</span> <b>${esc(item.title)}</b>`);
+    setTitle(item.title);
+    mainEl.appendChild(viewItemDetail(item));
+  } else if(parts[0] === 'create' && parts[1] === 'guides' && parts.length === 2){
+    setBreadcrumb('Create <span style="opacity:.5">›</span> <b>Guides</b>');
+    setTitle('Guides');
+    mainEl.appendChild(viewGuidesGrid());
+  } else if(parts[0] === 'create' && parts[1] === 'guides' && parts.length === 3){
+    const guide = GUIDES.find(g=>g.slug===parts[2]);
+    if(!guide){ mainEl.appendChild(view404()); return; }
+    setBreadcrumb(`Create <span style="opacity:.5">›</span> Guides <span style="opacity:.5">›</span> <b>${esc(guide.title)}</b>`);
+    setTitle(guide.title);
+    mainEl.appendChild(viewGuideDetail(guide));
+  } else if(parts[0] === 'community'){
+    setBreadcrumb('Community');
+    setTitle('Community');
+    mainEl.appendChild(viewCommunity());
+  } else {
+    setBreadcrumb('');
+    setTitle('');
+    mainEl.appendChild(view404());
+  }
+}
+
+function setBreadcrumb(html){
+  document.getElementById('topbar').innerHTML = `
+    <button class="home-btn" onclick="go('')">🏠 Home</button>
+    <div class="breadcrumb">${html}</div>
+  `;
+}
+
+/* ============================= VIEWS ============================= */
+
+function viewHome(){
+  const wrap = document.createElement('div');
+  wrap.className = 'view home-view';
+  wrap.innerHTML = `
+    <img src="favicon.png" alt="Build Island Reborn" class="logo-float">
+    <div class="menu-grid">
+      <button class="menu-btn create" onclick="go('create')">Create</button>
+      <button class="menu-btn play" onclick="openRoblox()">Play</button>
+      <button class="menu-btn secondary" onclick="go('rules')">Rules</button>
+      <button class="menu-btn secondary" onclick="go('community')">Community</button>
+    </div>
+  `;
+  return wrap;
+}
+
+function openRoblox(){
+  window.open(ROBLOX_URL, '_blank', 'noopener');
+}
+
+function viewRulesList(){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  const rows = RULES.map(r=>`
+    <div class="list-row" onclick="go('rules/${r.slug}')">
+      <div class="list-emoji">${r.emoji}</div>
+      <div class="list-text">
+        <b>${esc(r.title)}</b>
+        <span>${esc(r.shortDesc)}</span>
+      </div>
+    </div>
+  `).join('');
+  wrap.innerHTML = `
+    <h1 class="panel-title">Game Rules</h1>
+    <p class="panel-subtitle">Tap a category below to see exactly what's allowed, what's not, and what it costs you.</p>
+    <div class="list-panel">${rows}</div>
+  `;
+  return wrap;
+}
+
+function viewRuleDetail(rule){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  wrap.innerHTML = `<div class="detail-panel">${rule.html}</div>`;
+  return wrap;
+}
+
+function viewWikiHub(){
+  const wrap = document.createElement('div');
+  wrap.className = 'view home-view';
+  wrap.innerHTML = `
+    <h1 class="panel-title">Wiki</h1>
+    <p class="panel-subtitle">Everything you need to build smarter — item references and step-by-step guides.</p>
+    <div class="hub-grid">
+      <div class="hub-card" onclick="go('create/items')">
+        <span class="hub-icon">🧱</span>
+        <h3>Items</h3>
+        <p>Blocks, wiring, and tools-what they do and how to use them.</p>
+      </div>
+      <div class="hub-card" onclick="go('create/guides')">
+        <span class="hub-icon">📘</span>
+        <h3>Guides</h3>
+        <p>Tutorials and world setup walkthroughs, with video support.</p>
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+let activeItemTag = 'All';
+function viewItemsGrid(){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  const tags = ['All','Block','Wiring','Tool'];
+  const filterHTML = tags.map(t=>`<button class="tag-pill ${t===activeItemTag?'active':''}" onclick="setItemTag('${t}')">${t}</button>`).join('');
+  const filtered = activeItemTag==='All' ? ITEMS : ITEMS.filter(i=>i.tags.includes(activeItemTag));
+  const cards = filtered.map(i=>`
+    <div class="item-card" onclick="go('create/items/${i.slug}')">
+      <div class="thumb">${thumbHTML(i)}</div>
+      <h4>${esc(i.title)}</h4>
+      <div class="mini-tags">${i.tags.map(t=>`<span class="mini-tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  wrap.innerHTML = `
+    <h1 class="panel-title">Items</h1>
+    <p class="panel-subtitle">Sample entries below — add your own by editing the ITEMS list in the code.</p>
+    <div class="filter-row">${filterHTML}</div>
+    <div class="card-grid" id="items-grid">${cards}</div>
+  `;
+  return wrap;
+}
+function setItemTag(t){
+  activeItemTag = t;
+  document.getElementById('main').innerHTML='';
+  document.getElementById('main').appendChild(viewItemsGrid());
+}
+
+function viewItemDetail(item){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  wrap.innerHTML = `
+    <div class="detail-panel">
+      <div class="item-detail-head">
+        <div class="item-detail-thumb">${thumbHTML(item)}</div>
+        <div>
+          <div class="rule-detail-title" style="margin-bottom:6px;">${esc(item.title)}</div>
+          <div class="mini-tags">${item.tags.map(t=>`<span class="mini-tag">${t}</span>`).join('')}</div>
+        </div>
+      </div>
+      <div class="item-detail-body">
+        <p><i>${esc(item.summary)}</i></p>
+        <p>${esc(item.description)}</p>
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+function viewGuidesGrid(){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  const cards = GUIDES.map(g=>`
+    <div class="item-card" onclick="go('create/guides/${g.slug}')">
+      <div class="thumb">${thumbHTML(g)}</div>
+      <h4>${esc(g.title)}</h4>
+      <div class="mini-tags">${g.tags.map(t=>`<span class="mini-tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  wrap.innerHTML = `
+    <h1 class="panel-title">Guides</h1>
+    <p class="panel-subtitle">Sample entries below — add your own by editing the GUIDES list in the code.</p>
+    <div class="card-grid">${cards}</div>
+  `;
+  return wrap;
+}
+
+function viewGuideDetail(guide){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  const videoHTML = guide.youtubeId
+    ? `<div class="video-wrap"><iframe src="https://www.youtube.com/embed/${esc(guide.youtubeId)}" title="${esc(guide.title)}" allowfullscreen></iframe></div>`
+    : `<div class="no-video">No video attached to this guide yet.</div>`;
+  wrap.innerHTML = `
+    <div class="detail-panel">
+      <div class="item-detail-head">
+        <div class="item-detail-thumb">${thumbHTML(guide)}</div>
+        <div>
+          <div class="rule-detail-title" style="margin-bottom:6px;">${esc(guide.title)}</div>
+          <div class="mini-tags">${guide.tags.map(t=>`<span class="mini-tag">${t}</span>`).join('')}</div>
+        </div>
+      </div>
+      ${videoHTML}
+      <div class="item-detail-body">
+        <p><i>${esc(guide.summary)}</i></p>
+        <p>${esc(guide.description)}</p>
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+function viewCommunity(){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  const staffCards = STAFF.map(s=>`
+    <div class="staff-card">
+      <div class="staff-avatar">${avatarHTML(s)}</div>
+      <h4>${esc(s.name)}</h4>
+      <div class="staff-role">${esc(s.role)}</div>
+      <div class="staff-meta">
+        Roblox: <b>${esc(s.roblox)}</b><br>
+        Discord: <b>${esc(s.discord)}</b>
+      </div>
+    </div>
+  `).join('');
+  wrap.innerHTML = `
+    <h1 class="panel-title">Community</h1>
+    <div class="discord-block">
+      <p>Share your builds, report bugs, suggest features, and chat with other creators.</p>
+      <a class="discord-btn" href="${DISCORD_URL}" target="_blank" rel="noopener">💬 Join Discord</a>
+    </div>
+    <h2 class="panel-title" style="font-size:26px;">Staff Team</h2>
+    <div class="staff-grid">${staffCards}</div>
+  `;
+  return wrap;
+}
+
+function view404(){
+  const wrap = document.createElement('div');
+  wrap.className = 'view';
+  wrap.innerHTML = `
+    <div class="detail-panel" style="text-align:center;">
+      <div class="rule-detail-title">Page not found</div>
+      <p style="font-weight:300;">That page doesn't exist. <a href="#" onclick="go(''); return false;" style="color:#8fe3ff;">Go home</a>.</p>
+    </div>
+  `;
+  return wrap;
+}
+
+/* ============================= INIT ============================= */
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', render);
+render();
 </script>
 </body>
 </html>
