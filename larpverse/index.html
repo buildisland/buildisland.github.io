@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Map Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ====== SET YOUR IMAGE PATHS HERE ====== */
+  /* Edit the src attributes below, or edit the IMAGE_PATHS object in the <script> at the bottom */
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background: #1a1a1a;
+    font-family: 'Fredoka', 'Segoe UI', Arial, sans-serif;
+  }
+
+  #viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    cursor: grab;
+    background: #0d0d0d;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  #viewport.dragging {
+    cursor: grabbing;
+  }
+
+  #stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  #stage img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+    display: none;
+  }
+
+  #stage img.active {
+    display: block;
+  }
+
+  /* ---- UI ---- */
+  #ui {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    background: rgba(20, 20, 20, 0.75);
+    padding: 8px;
+    border-radius: 8px;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  #ui button {
+    background: #2b2b2b;
+    color: #e0e0e0;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  #ui button:hover {
+    background: #3a3a3a;
+  }
+
+  #ui button.active {
+    background: #4a90d9;
+    color: white;
+    border-color: #4a90d9;
+  }
+
+  #resetBtn {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background: rgba(20,20,20,0.75);
+    color: #e0e0e0;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: blur(6px);
+  }
+
+  #resetBtn:hover {
+    background: #3a3a3a;
+  }
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <button data-map="Plain" class="active">Plain</button>
+  <button data-map="Flags">Flags</button>
+  <button data-map="Terrain">Terrain</button>
+</div>
+
+<button id="resetBtn">Reset View</button>
+
+<div id="viewport">
+  <div id="stage">
+    <!-- Images are injected by the script below based on IMAGE_PATHS -->
+  </div>
+</div>
+
+<script>
+  // ======================================================
+  // SET YOUR IMAGE DIRECTORIES / PATHS HERE
+  // ======================================================
+  const IMAGE_PATHS = {
+    Plain:   "plain.png",
+    Flags:   "flags.png",
+    Terrain: "terrain.png"
+  };
+  // ======================================================
+
+  const viewport = document.getElementById('viewport');
+  const stage = document.getElementById('stage');
+
+  // Build <img> elements from IMAGE_PATHS
+  const imgElements = {};
+  for (const [name, path] of Object.entries(IMAGE_PATHS)) {
+    const img = document.createElement('img');
+    img.src = path;
+    img.alt = name;
+    img.draggable = false;
+    if (name === 'Plain') img.classList.add('active');
+    stage.appendChild(img);
+    imgElements[name] = img;
+  }
+
+  let currentMap = 'Plain';
+
+  // Transform state
+  let state = {
+    x: 0,       // pan x (px)
+    y: 0,       // pan y (px)
+    scale: 1,
+    rotation: 0 // degrees
+  };
+
+  function applyTransform() {
+    stage.style.transform =
+      `translate(${state.x}px, ${state.y}px) rotate(${state.rotation}deg) scale(${state.scale})`;
+  }
+
+  function resetView() {
+    // Center the current image in the viewport
+    const img = imgElements[currentMap];
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const iw = img.naturalWidth || 1000;
+    const ih = img.naturalHeight || 1000;
+
+    const fitScale = Math.min(vw / iw, vh / ih) * 0.9;
+    state.scale = fitScale > 0 ? fitScale : 1;
+    state.rotation = 0;
+    state.x = (vw - iw * state.scale) / 2;
+    state.y = (vh - ih * state.scale) / 2;
+    applyTransform();
+  }
+
+  // ---- Map switching ----
+  document.querySelectorAll('#ui button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#ui button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      Object.values(imgElements).forEach(img => img.classList.remove('active'));
+      currentMap = btn.dataset.map;
+      imgElements[currentMap].classList.add('active');
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetView);
+
+  // ---- Mouse drag to pan ----
+  let isDragging = false;
+  let lastMouse = { x: 0, y: 0 };
+
+  viewport.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    lastMouse = { x: e.clientX, y: e.clientY };
+    viewport.classList.add('dragging');
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastMouse.x;
+    const dy = e.clientY - lastMouse.y;
+    lastMouse = { x: e.clientX, y: e.clientY };
+    state.x += dx;
+    state.y += dy;
+    applyTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+    viewport.classList.remove('dragging');
+  });
+
+  // ---- Scroll to zoom (zoom toward cursor) ----
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    const newScale = Math.min(Math.max(state.scale * zoomFactor, 0.05), 20);
+
+    // Keep the point under the cursor stationary while zooming
+    const scaleRatio = newScale / state.scale;
+    state.x = mouseX - (mouseX - state.x) * scaleRatio;
+    state.y = mouseY - (mouseY - state.y) * scaleRatio;
+    state.scale = newScale;
+
+    applyTransform();
+  }, { passive: false });
+
+  // ---- Keyboard: WASD pan, Q/E rotate, R reset ----
+  const keys = {};
+  window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+  const PAN_SPEED = 12;     // px per frame
+  const ROTATE_SPEED = 1.2; // deg per frame
+
+  function keyboardLoop() {
+    if (keys['w']) state.y += PAN_SPEED;
+    if (keys['s']) state.y -= PAN_SPEED;
+    if (keys['a']) state.x += PAN_SPEED;
+    if (keys['d']) state.x -= PAN_SPEED;
+    if (keys['q']) state.rotation -= ROTATE_SPEED;
+    if (keys['e']) state.rotation += ROTATE_SPEED;
+    if (keys['r']) { resetView(); keys['r'] = false; }
+
+    applyTransform();
+    requestAnimationFrame(keyboardLoop);
+  }
+  requestAnimationFrame(keyboardLoop);
+
+  // ---- Init ----
+  window.addEventListener('resize', () => {
+    // keep current transform; user can press R to re-fit
+  });
+
+  window.addEventListener('load', () => {
+    // wait a tick for the active image to have its natural size
+    setTimeout(resetView, 50);
+  });
+
+  // In case the active image loads after 'load' event fires (e.g. slow disk read)
+  imgElements[currentMap].addEventListener('load', () => {
+    if (state.scale === 1 && state.x === 0 && state.y === 0) resetView();
+  });
+</script>
+
+</body>
+</html>
