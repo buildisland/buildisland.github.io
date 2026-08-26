@@ -232,15 +232,9 @@
     scheduleSave();
   }
 
-  // ---- Persistence: localStorage + URL hash ----
+  // ---- Persistence: only the active map mode, via localStorage + URL hash ----
   function saveState() {
-    const data = {
-      x: Math.round(state.x),
-      y: Math.round(state.y),
-      scale: Math.round(state.scale * 10000) / 10000,
-      rotation: Math.round(state.rotation * 100) / 100,
-      map: currentMap
-    };
+    const data = { map: currentMap };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) { /* localStorage unavailable, ignore */ }
@@ -273,23 +267,15 @@
   }
 
   function applyLoadedState(data) {
-    if (!data) return false;
+    if (!data || !data.map || !imgElements[data.map]) return false;
 
-    if (data.map && imgElements[data.map]) {
-      document.querySelectorAll('#ui button').forEach(b => {
-        b.classList.toggle('active', b.dataset.map === data.map);
-      });
-      Object.values(imgElements).forEach(img => img.classList.remove('active'));
-      currentMap = data.map;
-      imgElements[currentMap].classList.add('active');
-    }
+    document.querySelectorAll('#ui button').forEach(b => {
+      b.classList.toggle('active', b.dataset.map === data.map);
+    });
+    Object.values(imgElements).forEach(img => img.classList.remove('active'));
+    currentMap = data.map;
+    imgElements[currentMap].classList.add('active');
 
-    if (typeof data.x === 'number') state.x = data.x;
-    if (typeof data.y === 'number') state.y = data.y;
-    if (typeof data.scale === 'number' && data.scale > 0) state.scale = data.scale;
-    if (typeof data.rotation === 'number') state.rotation = data.rotation;
-
-    applyTransform();
     return true;
   }
 
@@ -430,9 +416,9 @@
     // wait a tick for the active image to have its natural size
     setTimeout(() => {
       const data = loadState();
-      const restored = applyLoadedState(data);
+      applyLoadedState(data); // just switches currentMap if a saved one exists
       stateApplied = true;
-      if (!restored) resetView();
+      resetView();
     }, 50);
   });
 
