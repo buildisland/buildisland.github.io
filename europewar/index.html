@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Europe Conquest</title>
+<style>
+*{box-sizing:border-box;margin:0;font-family:'Bahnschrift','Agency FB','Arial Narrow',Arial,sans-serif;color:#fff;user-select:none}
+body{background:#000;overflow:hidden}
+canvas{display:block;position:absolute;inset:0}
+.p{position:absolute;background:#000;border-radius:4px;padding:10px 12px;transition:opacity .25s,transform .25s}
+.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
+button,input{background:#141414;border:0;border-radius:3px;padding:7px 12px;font-size:14px}
+button{cursor:pointer;transition:background .15s,transform .1s}
+button:hover{background:#252525}button:active{transform:scale(.95)}
+input[type=range]{padding:0;vertical-align:middle;width:150px}
+h3{font-size:18px;margin:6px 0 2px}.sub{opacity:.6;font-size:13px}
+.fl{width:44px;height:28px;background-size:cover;background-position:center;border-radius:2px;display:inline-block;vertical-align:middle}
+.por{width:76px;height:96px;background:#111;border-radius:3px;margin:8px 0}
+.row{display:flex;justify-content:space-between;font-size:14px;padding:2px 0}.row span:first-child{opacity:.6}
+.btns{display:flex;gap:6px;margin-top:8px}
+.m{background:#000;border-radius:4px;padding:7px 10px;margin-bottom:6px;font-size:14px;animation:m 6s forwards}
+@keyframes m{0%{opacity:0;transform:translateX(20px)}5%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+#menu{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center}
+#menu .p{position:static;width:330px}#menu input{width:100%;margin:4px 0 10px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud" class="p hide" style="left:12px;top:12px;width:240px"></div>
+<div id="feed" style="position:absolute;right:12px;top:12px;width:270px;pointer-events:none"></div>
+<div id="info" class="p hide" style="right:12px;top:50%;margin-top:-180px;width:250px"></div>
+<div id="bar" class="p hide" style="left:0;right:0;margin:auto;bottom:14px;width:fit-content">
+ Troops <input type="range" id="rt" min="5" max="100" value="40"> <span id="rv" style="display:inline-block;width:38px">40%</span>
+ <button onclick="conscript()">Conscript 150g</button> <button id="inv" onclick="invest()"></button> <button id="sp" onclick="speedT()">1x</button>
+</div>
+<div id="menu"><div class="p">
+ <h1 style="font-size:26px;letter-spacing:2px">EUROPE CONQUEST</h1><div class="sub" style="margin:4px 0 14px">Drag to pan, scroll to zoom</div>
+ Nation name<input id="nm" value="Kingdom of Aldmark">
+ Bot nations<input id="nb" type="number" value="30" min="0" max="120">
+ <button id="go" disabled style="width:100%">Loading map...</button><div id="err" class="sub" style="margin-top:8px"></div>
+</div></div>
+<script>
+/* ---- CONFIG ---- */
+const MAP='Europemap.jpg', LAND_T=250;   // channel value >= LAND_T on all 3 channels = land, everything else = ocean
+/* Preset nations (for later): {name,short,leader,flag,color:'#rrggbb',regions:[[x,y,radius],...]} */
+const PRESET_NATIONS=[];
+const FLAGS=['de','fr','it','es','pt','pl','se','no','dk','fi','gr','tr','nl','be','at','ch','cz','hu','ro','ua','hr','rs','bg','ie','gb','lt','lv','ee'].map(c=>`https://flagcdn.com/w160/${c}.png`);
+const TITLES=['Kingdom of','Republic of','Duchy of','Empire of','Principality of','Grand Duchy of','Commonwealth of'];
+const C=(r,s,f,l)=>({r:r.split(' '),s:s.split(' '),f:f.split(' '),l:l.split(' ')});
+const CUL=[
+ C('Ash Wor Nor Brad Kent Wes Ely','land shire ford wick mark','Edmund Harold Oliver Arthur Henry Edward','Ashford Wells Hartley Fenwick Marlow Thorne'),
+ C('Aqui Bour Lor Pro Nor Gas Bret','ne gne vence aine tagne','Louis Henri Etienne Gaspard Lucien Armand','Moreau Delacroix Fontaine Beaumont Laurent Dupont'),
+ C('Skand Sver Dan Hald Ulf Nor Gjall','heim land mark vik gard','Harald Bjorn Erik Olaf Magnus Leif','Haraldsen Lindqvist Nordahl Bergstrom Eriksson'),
+ C('Hohen Ober Rhein Bran Sach Thur Frank','burg land stein berg mark','Friedrich Wilhelm Konrad Otto Heinrich Albrecht','Hartmann Weber Brandt Kessler Vogel Lehmann'),
+ C('Vel Mor Bela Zlat Kras Drav Mikh','ovia grad ica vina ostrov','Vladimir Bogdan Milos Casimir Dragan Mieszko','Novak Petrovic Kowalski Volkov Dvorak Horvat'),
+ C('Ligur Tosc Venet Lombar Pied Sard Calabr','ia ana ino ia onia','Giovanni Lorenzo Matteo Cosimo Alberto Marco','Rossi Medici Bianchi Visconti Conti Ferrari'),
+ C('Casti Ara Astur Galic Lusi Navar Cata','a ia lla gon nia','Alfonso Fernando Joaquin Rodrigo Tiago Diego','Mendoza Navarro Castillo Ferreira Alvarez Silva'),
+ C('Kara Yesil Ak Kizil Demir Bey Ana','ova lar istan oglu dag','Mehmet Selim Murat Kemal Osman Emre','Yildiz Demir Kaya Aksoy Celik Ozturk'),
+ C('Thess Pelo Mace Epir Cret Attic Ion','ia onia ika alia os','Nikolaos Dimitrios Andreas Stavros Alexios Theodoros','Papadakis Karras Stavrou Georgiou Makris Laskaris')];
+const pick=a=>a[(Math.random()*a.length)|0],cap=s=>s[0].toUpperCase()+s.slice(1);
+
+/* ---- STATE ---- */
+const $=id=>document.getElementById(id),cv=$('c'),ctx=cv.getContext('2d');
+let W,H,N,land,owner,comp,px32,imgData,off,octx,bq,par,vis,stamp=0;
+let z=1,px=0,py=0,dirty=true,phase='load',now=0,tickN=0,speed=1,acc=0,sel=null,player=null,fq=[],ft=[],fh=0,attacks=[],ships=[],totalLand=0,won=false;
+const nations=[null],FD=2500,OCEAN=pk([14,20,32]),LANDC=pk([72,72,66]);
+function pk(c){return(255<<24)|(c[2]<<16)|(c[1]<<8)|c[0]}
+/* ---- SOUND ---- */
+const SND={start:'gamestart.mp3',menu:'menuopen.mp3',msg:'message_notif.mp3',click:'mouseclick.mp3'},AU={};
+for(const k in SND)AU[k]=new Audio(SND[k]);
+function snd(k){try{const a=AU[k].cloneNode();a.volume=.5;a.play().catch(()=>{})}catch(e){}}
+document.addEventListener('click',e=>{if(e.target.closest('button'))snd('click')});
+function msg(t,s=true){const d=document.createElement('div');d.className='m';d.textContent=t;$('feed').appendChild(d);setTimeout(()=>d.remove(),6000);if(s)snd('msg')}
+/* ---- LOAD MAP ---- */
+const img=new Image();img.src=MAP;
+img.onerror=()=>$('err').textContent='Could not load '+MAP+'. Put it next to this HTML file.';
+img.onload=()=>{
+ W=img.naturalWidth;H=img.naturalHeight;N=W*H;
+ const t=document.createElement('canvas');t.width=W;t.height=H;const c=t.getContext('2d',{willReadFrequently:true});c.drawImage(img,0,0);
+ let d;try{d=c.getImageData(0,0,W,H).data}catch(e){$('err').textContent='Browser blocked pixel reading (file:// restriction). Run a local server in this folder: "python -m http.server" and open http://localhost:8000/game.html';return}
+ land=new Uint8Array(N);owner=new Uint16Array(N);
+ for(let i=0;i<N;i++){const k=i*4;if(d[k]>=LAND_T&&d[k+1]>=LAND_T&&d[k+2]>=LAND_T){land[i]=1;totalLand++}}
+ comp=new Uint32Array(N);bq=new Int32Array(N);par=new Int32Array(N);vis=new Uint32Array(N);
+ let cid=0;
+ for(let i=0;i<N;i++)if(!land[i]&&!comp[i]){cid++;let sp=0;bq[sp++]=i;comp[i]=cid;
+  while(sp){const c=bq[--sp],x=c%W;
+   if(x>0&&!land[c-1]&&!comp[c-1]){comp[c-1]=cid;bq[sp++]=c-1}
+   if(x<W-1&&!land[c+1]&&!comp[c+1]){comp[c+1]=cid;bq[sp++]=c+1}
+   if(c>=W&&!land[c-W]&&!comp[c-W]){comp[c-W]=cid;bq[sp++]=c-W}
+   if(c<N-W&&!land[c+W]&&!comp[c+W]){comp[c+W]=cid;bq[sp++]=c+W}}}
+ imgData=new ImageData(W,H);px32=new Uint32Array(imgData.data.buffer);resetPix();
+ off=document.createElement('canvas');off.width=W;off.height=H;octx=off.getContext('2d');
+ resize();phase='menu';$('go').disabled=false;$('go').textContent='Start';$('go').onclick=startGame;
+};
+function resetPix(){for(let i=0;i<N;i++)px32[i]=land[i]?LANDC:OCEAN;dirty=true}
+function resize(){cv.width=innerWidth;cv.height=innerHeight;if(W){z=Math.min(cv.width/W,cv.height/H);px=(cv.width-W*z)/2;py=(cv.height-H*z)/2}}
+addEventListener('resize',resize);
+/* ---- NATIONS ---- */
+function hsl(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))))};return[f(0),f(8),f(4)]}
+function mk(o){
+ const id=nations.length,cu=pick(CUL),sh=o.short||cap(pick(cu.r)+pick(cu.s));
+ const col=o.color?[1,3,5].map(k=>parseInt(o.color.substr(k,2),16)):hsl((id*137.5)%360,.55+Math.random()*.2,.5);
+ const n={id,short:sh,name:o.name||pick(TITLES)+' '+sh,leader:o.leader||pick(cu.f)+' '+pick(cu.l),flag:o.flag||pick(FLAGS),col,p32:pk(col),bot:!!o.bot,
+  troops:2500,gold:200,tiles:0,list:[],sx:0,sy:0,econ:1,alive:true,na:0,ships:0,hex:`rgb(${col})`};
+ nations.push(n);return n}
+function setOwner(i,id,anim){
+ const old=owner[i];if(old){const o=nations[old];o.tiles--;o.sx-=i%W;o.sy-=(i/W)|0}
+ owner[i]=id;const n=nations[id];n.tiles++;n.list.push(i);n.sx+=i%W;n.sy+=(i/W)|0;
+ if(anim){px32[i]=mix(n,0);fq.push(i);ft.push(now)}else px32[i]=n.p32;dirty=true}
+function mix(n,t){const e=t*t*(3-2*t),k=.7*(1-e),c=n.col;return pk([c[0]+(255-c[0])*k|0,c[1]+(255-c[1])*k|0,c[2]+(255-c[2])*k|0])}
+function fade(){
+ while(fh<fq.length&&now-ft[fh]>=FD){const i=fq[fh],o=owner[i];if(o)px32[i]=nations[o].p32;fh++;dirty=true}
+ for(let k=fh;k<fq.length;k++){const o=owner[fq[k]];if(o)px32[fq[k]]=mix(nations[o],(now-ft[k])/FD)}
+ if(fq.length>fh)dirty=true;
+ if(fh>100000){fq=fq.slice(fh);ft=ft.slice(fh);fh=0}}
+function freeSpot(x,y,r){for(let dy=-r;dy<=r;dy+=4)for(let dx=-r;dx<=r;dx+=4){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<W&&Y<H&&owner[Y*W+X])return false}return true}
+function spawn(n,x,y,r){for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=H||dx*dx+dy*dy>r*r)continue;const i=Y*W+X;if(land[i]&&!owner[i])setOwner(i,n.id,false)}}
+const maxT=n=>3000+n.tiles*12,inc=n=>1+n.tiles*.02*(1+.4*(n.econ-1)),invCost=n=>Math.round(200*Math.pow(1.8,n.econ-1));
+/* ---- START ---- */
+function startGame(){
+ snd('start');$('menu').style.display='none';nations.length=1;owner.fill(0);resetPix();attacks=[];ships=[];fq=[];ft=[];fh=0;won=false;
+ const nm=$('nm').value.trim()||'Player Nation';
+ player=mk({name:nm,short:nm.replace(/^(Kingdom|Republic|Duchy|Empire|Principality) of /,'')});
+ for(const p of PRESET_NATIONS){const n=mk({...p,bot:true});for(const[x,y,r]of p.regions||[])spawn(n,x,y,r)}
+ const nb=Math.max(0,Math.min(120,+$('nb').value||0));
+ for(let k=0;k<nb;k++){const n=mk({bot:true});
+  for(let t=0;t<400&&n.tiles<40;t++){const i=(Math.random()*N)|0,x=i%W,y=(i/W)|0;if(land[i]&&!owner[i]&&freeSpot(x,y,30))spawn(n,x,y,9)}
+  if(n.tiles<20)n.alive=false}
+ phase='spawn';cv.style.cursor='crosshair';$('hud').classList.remove('hide');hud();msg('Click on land to choose your starting location',false)}
+/* ---- COMBAT ---- */
+function seedFront(n,tid,click){
+ const L=n.list,pool=new Set,cx=click%W,cy=(click/W)|0,tries=Math.min(6000,L.length*2);
+ for(let k=0;k<tries;k++){const i=L[(Math.random()*L.length)|0];if(owner[i]!==n.id)continue;const x=i%W;
+  if(x>0&&owner[i-1]===tid&&(tid||land[i-1]))pool.add(i-1);
+  if(x<W-1&&owner[i+1]===tid&&(tid||land[i+1]))pool.add(i+1);
+  if(i>=W&&owner[i-W]===tid&&(tid||land[i-W]))pool.add(i-W);
+  if(i<N-W&&owner[i+W]===tid&&(tid||land[i+W]))pool.add(i+W)}
+ const d=j=>{const a=j%W-cx,b=((j/W)|0)-cy;return a*a+b*b};
+ return[...pool].sort((a,b)=>d(a)-d(b)).slice(0,150)}
+function launch(n,tid,tr,click,seed,paid){
+ if(!paid)n.troops-=tr;
+ let a=attacks.find(a=>a.o===n.id&&a.t===tid);
+ if(a){a.troops+=tr;a.front.push(...seed)}
+ else{attacks.push({o:n.id,t:tid,troops:tr,front:seed,click,cx:seed[0]%W,cy:(seed[0]/W)|0});n.na++;
+  if(tid&&tid===player.id&&n!==player)msg(n.short+' is attacking you!')}}
+function endAttack(a){const n=nations[a.o];n.troops+=Math.max(0,a.troops);n.na--;const k=attacks.indexOf(a);if(k>=0)attacks.splice(k,1)}
+function stepAttack(a){
+ const n=nations[a.o],d=a.t?nations[a.t]:null;
+ if(!n.alive||(d&&!d.alive)){endAttack(a);return}
+ let per=Math.ceil(3+Math.sqrt(a.troops)*.45);
+ while(per-->0){
+  if(!a.front.length){a.front=seedFront(n,a.t,a.click);if(!a.front.length){endAttack(a);return}}
+  const fi=(Math.random()*Math.random()*a.front.length)|0,i=a.front[fi];a.front[fi]=a.front[a.front.length-1];a.front.pop();
+  if(owner[i]!==a.t||!land[i])continue;
+  const dens=d?d.troops/Math.max(d.tiles,1):0,cost=d?2+dens*.45:1.3;
+  if(a.troops<cost){endAttack(a);return}
+  a.troops-=cost;if(d)d.troops=Math.max(0,d.troops-dens*.25);
+  setOwner(i,n.id,true);
+  const x=i%W,y=(i/W)|0;a.cx+=(x-a.cx)*.03;a.cy+=(y-a.cy)*.03;
+  if(x>0&&owner[i-1]===a.t)a.front.push(i-1);if(x<W-1&&owner[i+1]===a.t)a.front.push(i+1);
+  if(i>=W&&owner[i-W]===a.t)a.front.push(i-W);if(i<N-W&&owner[i+W]===a.t)a.front.push(i+W);
+  if(d&&d.tiles<=0){eliminate(d,n);endAttack(a);return}}}
+function eliminate(d,n){
+ d.alive=false;n.gold+=d.gold*.5;d.gold=0;
+ for(const a of attacks.slice())if(a.o===d.id)endAttack(a);
+ msg(`${d.short} was conquered by ${n.short}`,d===player||n===player);
+ if(d===player){phase='over';msg('You have been eliminated.')}}
+function sendShip(n,tile,ratio,pl){
+ const fail=m=>{if(pl)msg(m,false);return false};
+ if(n.ships>=3)return fail('Maximum of 3 ships at sea');
+ const tr=n.troops*ratio;if(tr<30)return fail('Not enough troops');
+ const tx=tile%W,ty=(tile/W)|0;let w=-1;
+ out:for(let r=1;r<=30;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+  if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;const X=tx+dx,Y=ty+dy;if(X<0||Y<0||X>=W||Y>=H)continue;
+  if(!land[Y*W+X]){w=Y*W+X;break out}}
+ if(w<0)return fail('Target has no coast within reach');
+ const wx=w%W,nbs=[wx>0?w-1:-1,wx<W-1?w+1:-1,w>=W?w-W:-1,w<N-W?w+W:-1];let Lt=-1;
+ for(const j of nbs)if(j>=0&&land[j]&&owner[j]!==n.id&&(Lt<0||owner[j]===owner[tile]))Lt=j;
+ if(Lt<0)return fail('Target is already yours or unreachable');
+ const cs=new Set,L=n.list;
+ for(let k=0;k<Math.min(4000,L.length*2);k++){const i=L[(Math.random()*L.length)|0];if(owner[i]!==n.id)continue;const x=i%W;
+  if(x>0&&!land[i-1])cs.add(comp[i-1]);if(x<W-1&&!land[i+1])cs.add(comp[i+1]);if(i>=W&&!land[i-W])cs.add(comp[i-W]);if(i<N-W&&!land[i+W])cs.add(comp[i+W])}
+ if(!cs.size)return fail('You need ocean access to send ships');
+ if(!cs.has(comp[w]))return fail('No clear sea route to that land');
+ const s2=++stamp;let h=0,t=0,f=-1;bq[t++]=w;vis[w]=s2;par[w]=-1;
+ while(h<t){const c=bq[h++],x=c%W;
+  if((x>0&&owner[c-1]===n.id)||(x<W-1&&owner[c+1]===n.id)||(c>=W&&owner[c-W]===n.id)||(c<N-W&&owner[c+W]===n.id)){f=c;break}
+  if(x>0&&!land[c-1]&&vis[c-1]!==s2){vis[c-1]=s2;par[c-1]=c;bq[t++]=c-1}
+  if(x<W-1&&!land[c+1]&&vis[c+1]!==s2){vis[c+1]=s2;par[c+1]=c;bq[t++]=c+1}
+  if(c>=W&&!land[c-W]&&vis[c-W]!==s2){vis[c-W]=s2;par[c-W]=c;bq[t++]=c-W}
+  if(c<N-W&&!land[c+W]&&vis[c+W]!==s2){vis[c+W]=s2;par[c+W]=c;bq[t++]=c+W}}
+ if(f<0)return fail('No clear sea route to that land');
+ const path=[];for(let c=f;c!==-1;c=par[c])path.push(c);
+ n.troops-=tr;n.ships++;ships.push({o:n.id,path,pos:0,troops:tr,L:Lt});
+ if(pl)msg('Ship launched',false);return true}
+function stepShip(s){
+ s.pos+=4;const n=nations[s.o];
+ if(s.pos<s.path.length-1)return true;
+ n.ships--;if(!n.alive)return false;
+ const t=owner[s.L];
+ if(t===n.id){n.troops+=s.troops}else{launch(n,t,s.troops,s.L,[s.L],true);if(n===player)msg('Your troops have landed',true)}
+ return false}
+/* ---- BOT AI ---- */
+function ai(n){
+ if(n.na>=2||n.troops<maxT(n)*.3)return;
+ const L=n.list,c0=[],c1=[];
+ for(let k=0;k<150&&L.length;k++){const i=L[(Math.random()*L.length)|0];if(owner[i]!==n.id)continue;const x=i%W;
+  for(const j of[x>0?i-1:-1,x<W-1?i+1:-1,i>=W?i-W:-1,i<N-W?i+W:-1])if(j>=0&&land[j]&&owner[j]!==n.id)(owner[j]?c1:c0).push(j)}
+ const tr=n.troops*(.2+Math.random()*.3);
+ if(c0.length&&Math.random()<.8){const j=pick(c0),s=seedFront(n,0,j);if(s.length)return launch(n,0,tr,j,s)}
+ if(c1.length){const j=pick(c1),d=nations[owner[j]];if(d.troops<n.troops*1.2||Math.random()<.1){const s=seedFront(n,d.id,j);if(s.length)return launch(n,d.id,tr,j,s)}}
+ if((!c0.length&&!c1.length&&Math.random()<.5)||Math.random()<.06){
+  for(let t=0;t<60;t++){const i=(Math.random()*N)|0;if(land[i]&&owner[i]!==n.id){sendShip(n,i,.3,false);break}}}}
+/* ---- TICK ---- */
+function tick(){
+ tickN++;
+ for(const a of attacks.slice())if(attacks.includes(a))stepAttack(a);
+ ships=ships.filter(stepShip);
+ for(const n of nations){if(n&&n.alive&&n.bot&&(tickN+n.id)%30===0)ai(n)}
+ if(tickN%10===0){
+  for(const n of nations){if(!n||!n.alive)continue;
+   const m=maxT(n);n.troops=Math.min(m,n.troops+.04*n.troops*Math.max(0,1-n.troops/m)+4);n.gold+=inc(n);
+   if(n.bot&&n.gold>invCost(n)*1.5){n.gold-=invCost(n);n.econ++}
+   if(n.list.length>n.tiles*2+200)n.list=[...new Set(n.list.filter(i=>owner[i]===n.id))]}
+  hud();if(sel!=null)showInfo(sel,true);
+  if(!won&&player.tiles>=totalLand*.7){won=true;msg('Victory! You control 70% of Europe.')}}}
+/* ---- UI ---- */
+const f=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e4?(v/1e3).toFixed(1)+'K':Math.floor(v);
+const flagStyle=n=>`background-image:url(${n.flag}),linear-gradient(${n.hex},${n.hex})`;
+function hud(){
+ const n=player;if(!n)return;
+ $('hud').innerHTML=`<span class="fl" style="${flagStyle(n)}"></span> <b style="font-size:17px;margin-left:6px">${n.name}</b>
+ <div style="height:8px"></div>
+ <div class="row"><span>Manpower</span><span>${f(n.troops)} / ${f(maxT(n))}</span></div>
+ <div class="row"><span>Economy</span><span>${f(n.gold)} (+${inc(n).toFixed(1)}/s) Lv${n.econ}</span></div>
+ <div class="row"><span>Territory</span><span>${f(n.tiles)} (${(n.tiles/totalLand*100).toFixed(1)}%)</span></div>`;
+ $('inv').textContent='Invest '+invCost(n)+'g'}
+function showInfo(i,silent){
+ sel=i;const o=owner[i],n=o?nations[o]:null,p=$('info');
+ let h=n?`<span class="fl" style="${flagStyle(n)};width:64px;height:40px"></span><h3>${n.name}</h3><div class="sub">Leader: ${n.leader}</div><div class="por"></div>
+  <div class="row"><span>Wealth</span><span>${f(n.gold)}</span></div><div class="row"><span>Manpower</span><span>${f(n.troops)}</span></div><div class="row"><span>Territory</span><span>${f(n.tiles)}</span></div>`
+  :`<h3>Unclaimed land</h3><div class="sub">No nation controls this territory</div>`;
+ if(n!==player)h+=`<div class="btns"><button onclick="attackSel(0)">${n?'Attack':'Expand'}</button><button onclick="attackSel(1)">Send ship</button></div>`;
+ if(!silent&&p.classList.contains('hide'))snd('menu');
+ p.innerHTML=h;p.classList.remove('hide')}
+function attackSel(ship){
+ if(sel==null||phase!=='play')return;
+ const n=player,tid=owner[sel];if(tid===n.id)return;
+ const ratio=$('rt').value/100,tr=n.troops*ratio;if(tr<30)return msg('Not enough troops',false);
+ if(!ship){const s=seedFront(n,tid,sel);if(s.length){launch(n,tid,tr,sel,s);hud();return}}
+ if(sendShip(n,sel,ratio,true))hud()}
+function conscript(){const n=player;if(phase!=='play'||n.gold<150)return;n.gold-=150;n.troops=Math.min(maxT(n),n.troops+400);hud()}
+function invest(){const n=player;if(phase!=='play'||n.gold<invCost(n))return;n.gold-=invCost(n);n.econ++;hud()}
+function speedT(){speed=speed===1?2:speed===2?4:1;$('sp').textContent=speed+'x'}
+$('rt').oninput=e=>$('rv').textContent=e.target.value+'%';
+/* ---- INPUT ---- */
+let drag=null;
+cv.onmousedown=e=>{drag={x:e.clientX,y:e.clientY,px,py,m:0}};
+addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>4)drag.m=1;if(drag.m){px=drag.px+dx;py=drag.py+dy}});
+addEventListener('mouseup',e=>{if(drag&&!drag.m&&e.target===cv)clickMap(e);drag=null});
+cv.addEventListener('wheel',e=>{e.preventDefault();const nz=Math.max(.2,Math.min(40,z*Math.exp(-e.deltaY*.0015)));px=e.clientX-(e.clientX-px)*nz/z;py=e.clientY-(e.clientY-py)*nz/z;z=nz},{passive:false});
+function clickMap(e){
+ const x=Math.floor((e.clientX-px)/z),y=Math.floor((e.clientY-py)/z);
+ if(x<0||y<0||x>=W||y>=H||!(phase==='spawn'||phase==='play'||phase==='over'))return;
+ const i=y*W+x;
+ if(phase==='spawn'){
+  if(!land[i]||owner[i]||!freeSpot(x,y,12))return msg('Choose free land away from other nations',false);
+  spawn(player,x,y,9);phase='play';cv.style.cursor='default';$('bar').classList.remove('hide');hud();msg('Click territory to inspect it. Attack or expand with the troop slider.',false);return}
+ if(land[i])showInfo(i);else{sel=null;$('info').classList.add('hide')}}
+/* ---- RENDER ---- */
+function draw(){
+ ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
+ if(!off)return;
+ if(dirty){octx.putImageData(imgData,0,0);dirty=false}
+ ctx.setTransform(z,0,0,z,px,py);ctx.imageSmoothingEnabled=false;ctx.drawImage(off,0,0);
+ ctx.setTransform(1,0,0,1,0,0);ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=4;
+ for(const n of nations){if(!n||!n.alive||n.tiles<200)continue;
+  const fs=Math.min(26,Math.sqrt(n.tiles)*z*.28);if(fs<8)continue;
+  ctx.font=`${fs}px Bahnschrift, Arial`;ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillText(n.short,n.sx/n.tiles*z+px,n.sy/n.tiles*z+py)}
+ ctx.shadowBlur=0;
+ const tf=Math.min(1,acc/100);
+ for(const s of ships){
+  const p=Math.min(s.path.length-1,s.pos+4*tf*speed),i0=Math.floor(p),i1=Math.min(i0+1,s.path.length-1),fr=p-i0;
+  const a=s.path[i0],b=s.path[i1],X=((a%W)*(1-fr)+(b%W)*fr+.5)*z+px,Y=(((a/W)|0)*(1-fr)+((b/W)|0)*fr+.5)*z+py;
+  const r=Math.max(4,z*1.5);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(X,Y,r+1.5,0,7);ctx.fill();
+  ctx.fillStyle=nations[s.o].hex;ctx.beginPath();ctx.arc(X,Y,r,0,7);ctx.fill();
+  ctx.font='bold 11px Bahnschrift, Arial';ctx.fillStyle='#fff';ctx.fillText(Math.round(s.troops),X,Y-r-8)}
+ ctx.font='bold 12px Bahnschrift, Arial';
+ for(const a of attacks){
+  const X=a.cx*z+px,Y=a.cy*z+py;if(X<-50||Y<-50||X>cv.width+50||Y>cv.height+50)continue;
+  const s=''+Math.round(a.troops),w=ctx.measureText(s).width+12;
+  ctx.fillStyle='rgba(0,0,0,.78)';ctx.beginPath();ctx.roundRect(X-w/2,Y-9,w,18,4);ctx.fill();
+  ctx.fillStyle=nations[a.o].hex;ctx.fillRect(X-w/2+3,Y-5,3,10);
+  ctx.fillStyle='#fff';ctx.fillText(s,X+2,Y+1)}}
+function loop(t){
+ const dt=t-(loop.l||t);loop.l=t;now=t;
+ if(phase==='play'){acc=Math.min(acc+dt*speed,600);while(acc>=100){acc-=100;tick()}}
+ fade();draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script></body></html>
