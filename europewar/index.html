@@ -1,1 +1,287 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Europe Conquest</title>
+<style>
+:root{--ocean:#0d2233;--ink:#ece6d4;--panel:#13212cee;--line:#3a4b57;--brass:#d9a441;--bad:#e0715c}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ocean);color:var(--ink);font:14px/1.4 system-ui,sans-serif;overflow:hidden}
+canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+.box{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+#hud{top:10px;left:10px;display:none;gap:14px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 20px)}
+#hud img{height:30px;border:1px solid var(--line)}
+#hud b{font-family:Georgia,serif;font-size:16px}
+.stat{display:flex;flex-direction:column;font-size:12px;color:#aab6bd}.stat span{font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+button{background:#21323e;color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer;font:inherit}
+button:hover{border-color:var(--brass)}button:disabled{opacity:.4;cursor:default}
+button.on{background:var(--brass);color:#14202a}
+#panel{top:10px;right:10px;width:260px;display:none}
+#panel h2{font:600 19px Georgia,serif;margin:0 0 2px}
+.row{display:flex;gap:10px}
+.portrait{width:64px;height:78px;border:1px solid var(--line);background:#0b161e;flex:none}
+.flag{width:100%;max-height:100px;object-fit:contain;border:1px solid var(--line);margin-bottom:8px;background:#0b161e}
+.kv{display:flex;justify-content:space-between;margin-top:4px}
+.acts{display:grid;gap:6px;margin-top:12px}
+#toast{left:50%;bottom:24px;transform:translateX(-50%);display:none;border-color:var(--brass)}
+#overlay{inset:0;display:flex;align-items:center;justify-content:center;background:#0d2233e6;z-index:5}
+#overlay .box{position:static;max-width:440px}
+#overlay h1{font:600 28px Georgia,serif;margin:0 0 8px}
+#hint{left:50%;top:14px;transform:translateX(-50%);display:none}
+</style></head><body>
+<canvas id="cv"></canvas>
+<div id="hud" class="box">
+  <img id="hf" alt=""><b id="hn"></b>
+  <div class="stat">Gold<span id="hg"></span></div>
+  <div class="stat">Manpower<span id="hm"></span></div>
+  <div class="stat">Territory<span id="ht"></span></div>
+  <label class="stat">Troops per order: <span id="pv">40%</span><input id="pct" type="range" min="5" max="100" value="40"></label>
+  <button id="rec" title="Spend 50 gold for 100 manpower">Recruit (50g)</button>
+  <span><button data-s="1" class="on">x1</button> <button data-s="2">x2</button> <button data-s="4">x4</button></span>
+</div>
+<div id="hint" class="box">Click on land to found your nation.</div>
+<div id="panel" class="box"></div>
+<div id="toast" class="box"></div>
+<div id="overlay" class="box"><div class="box">
+  <h1>Europe Conquest</h1>
+  <p id="omsg">Loading Europemap.jpg…</p>
+  <p id="pick" style="display:none">Choose the map file manually: <input type="file" id="file" accept="image/*"></p>
+  <p style="color:#8c9aa3;font-size:12px">Inspired by OpenFront.io</p>
+</div></div>
+<script>
+// ===== Config =====
+const MAP_SRC='Europemap.jpg', MAX_W=800, WHITE_MIN=250, RANDOM_BOTS=40, SHIP_COST=20, SHIP_SPEED=3;
+const FLAGS=['se','no','dk','fi','de','fr','it','es','pt','pl','cz','gr','tr','ro','hu','at','ch','nl','be','ie','hr','bg'].map(c=>`https://flagcdn.com/w160/${c}.png`);
+/* Preset nations (coder-defined). Coordinates are in ORIGINAL image pixels.
+   { name:'Norvalia', leader:'Jon Hale', flag:'https://...png', color:[r,g,b], player:false,
+     territory:[{x:500,y:300,r:20}] }   // one or more land discs
+   A preset with player:true becomes the human nation and skips the click-to-spawn step. */
+const PRESETS=[];
 
+// ===== Name generation (Latin alphabet, European styles) =====
+const C=[
+ {p:['Ash','Brad','Nor','Kent','Wex','Harl'],s:['ford','shire','land','mouth','wick','ton'],f:['Edmund','Harold','Alfred','Oswin','Edith','Maud'],l:['Ashby','Fenwick','Holloway','Thorne','Wyndham','Cavendish'],t:['Kingdom of ','Duchy of ']},
+ {p:['Beau','Mont','Val','Aqui','Bour','Lor'],s:['mont','ville','aine','gne','ance','ac'],f:['Louis','Henri','Aurelie','Camille','Etienne','Margaux'],l:['Beaumont','Delacroix','Montclair','Fontaine','Girard','Valmy'],t:['Kingdom of ','Republic of ']},
+ {p:['Nord','Sol','Vik','Fjell','Stor','Ska'],s:['heim','vik','gard','land','holm','by'],f:['Erik','Astrid','Bjorn','Ingrid','Leif','Sigrid'],l:['Haraldsson','Lindqvist','Nygaard','Solberg','Dahl','Eriksen'],t:['Kingdom of ','']},
+ {p:['Hohen','Rhein','Alt','Schwarz','Grun','Mark'],s:['burg','stein','berg','dorf','wald','hafen'],f:['Konrad','Friedrich','Greta','Matthias','Liesel','Otto'],l:['Weber','Falkenrath','Kessler','Hartmann','Brandt','Vogel'],t:['Duchy of ','Grand Duchy of ']},
+ {p:['Bela','Nov','Zlat','Vysh','Kras','Sver'],s:['grad','slav','ovo','ice','ska','mir'],f:['Vladimir','Milena','Bogdan','Katarina','Stanislav','Dragana'],l:['Kovalenko','Novak','Petrovic','Zielinski','Horvat','Volkov'],t:['Principality of ','Republic of ']},
+ {p:['Monte','Vil','Bella','Cas','Sant','Ven'],s:['nova','ia','ona','ello','ara','etto'],f:['Lorenzo','Giulia','Matteo','Chiara','Alessio','Beatrice'],l:['Rossi','Moretti','Bellini','Ferrante','Conti','Vitale'],t:['Republic of ','Duchy of ']},
+ {p:['Sierra','Val','Costa','Alba','Tor','Cas'],s:['lona','dia','ez','cia','mar','gos'],f:['Alonso','Isabel','Diego','Beatriz','Joao','Ines'],l:['Navarro','Castillo','Ferreira','Mendes','Ortega','Salazar'],t:['Kingdom of ','Crown of ']},
+ {p:['Kara','Yeni','Ak','Demir','Bursa','Ege'],s:['bey','kent','ova','lar','han','pasa'],f:['Mehmet','Ayse','Kemal','Selim','Leyla','Emre'],l:['Yilmaz','Demirci','Aksoy','Karaman','Ozturk','Kaya'],t:['Sultanate of ','Beylik of ']},
+ {p:['Neo','Kalli','Pelo','Ther','Ioni','Arka'],s:['polis','nissos','ia','akos','ona','ikon'],f:['Nikolaos','Eleni','Dimitri','Sophia','Yannis','Thalia'],l:['Papadakis','Karras','Stavros','Alexiou','Mavros','Vasilis'],t:['Republic of ','Despotate of ']}
+];
+const R=a=>a[Math.random()*a.length|0];
+function genNames(){const c=R(C);return{name:R(c.t)+R(c.p)+R(c.s),leader:R(c.f)+' '+R(c.l)}}
+function hsl(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))))};return[f(0),f(8),f(4)]}
+const u32=c=>(255<<24)|(c[2]<<16)|(c[1]<<8)|c[0];
+const OCEAN32=u32([13,34,51]), LAND32=u32([189,183,159]);
+
+// ===== State =====
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),$=id=>document.getElementById(id);
+let W,H,N,S=1,land,owner,img32,off,offCtx,imgData,dirty=true;
+let nations=[null],attacks=[],ships=[],me=0,phase='load',sel=-1,panelKey=null,speed=1,spawns=[];
+let zoom=1,panX=0,panY=0;
+const P=()=>nations[me];
+
+// ===== Map loading =====
+function loadMap(src){const im=new Image();im.onload=()=>build(im);im.onerror=()=>fail('Could not load '+MAP_SRC+'. Place it next to this HTML file.');im.src=src}
+function fail(m){$('omsg').textContent=m;$('pick').style.display='block'}
+$('file').onchange=e=>{if(e.target.files[0])loadMap(URL.createObjectURL(e.target.files[0]))};
+function build(im){
+  S=Math.min(1,MAX_W/im.naturalWidth);W=Math.round(im.naturalWidth*S);H=Math.round(im.naturalHeight*S);N=W*H;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingEnabled=false;x.drawImage(im,0,0,W,H);
+  let d;try{d=x.getImageData(0,0,W,H).data}catch(e){return fail('The browser blocked pixel access (file:// restriction). Run a local server (python -m http.server) or pick the file below.')}
+  land=new Uint8Array(N);owner=new Uint16Array(N);
+  off=document.createElement('canvas');off.width=W;off.height=H;offCtx=off.getContext('2d');
+  imgData=offCtx.createImageData(W,H);img32=new Uint32Array(imgData.data.buffer);
+  for(let i=0;i<N;i++){const j=i*4;land[i]=(d[j]>=WHITE_MIN&&d[j+1]>=WHITE_MIN&&d[j+2]>=WHITE_MIN)?1:0;img32[i]=land[i]?LAND32:OCEAN32}
+  setup();
+}
+
+// ===== Nations =====
+function newNation(spec={},bot=true){
+  const id=nations.length,g=genNames();
+  const col=spec.color||hsl((id*137.5)%360,.62,.5);
+  const n={id,name:spec.name||g.name,leader:spec.leader||g.leader,flag:spec.flag||R(FLAGS),col,c32:u32(col),
+    tiles:0,sx:0,sy:0,gold:50,mp:200,alive:true,bot,att:0,fi:new Image()};
+  n.fi.src=n.flag;nations.push(n);return n}
+function setOwner(i,o){
+  const p=owner[i];if(p===o)return;const x=i%W,y=i/W|0;
+  if(p){const n=nations[p];n.tiles--;n.sx-=x;n.sy-=y;if(!n.tiles&&n.alive)kill(n)}
+  owner[i]=o;if(o){const n=nations[o];n.tiles++;n.sx+=x;n.sy+=y;img32[i]=n.c32}else img32[i]=LAND32;dirty=true}
+function kill(n){n.alive=false;if(n.id===me)toast('Your nation has fallen.',6000)}
+function spawn(n,cx,cy,r){let c=0;
+  for(let y=-r;y<=r;y++)for(let x=-r;x<=r;x++){if(x*x+y*y>r*r)continue;const X=cx+x,Y=cy+y;
+    if(X<0||Y<0||X>=W||Y>=H)continue;const i=Y*W+X;if(land[i]&&!owner[i]){setOwner(i,n.id);c++}}
+  return c}
+function countFree(cx,cy,r){let c=0;for(let y=-r;y<=r;y++)for(let x=-r;x<=r;x++){const X=cx+x,Y=cy+y;if(x*x+y*y<=r*r&&X>=0&&Y>=0&&X<W&&Y<H&&land[Y*W+X]&&!owner[Y*W+X])c++}return c}
+
+function setup(){
+  // preset nations
+  for(const sp of PRESETS){const n=newNation(sp,!sp.player);if(sp.player)me=n.id;
+    for(const t of sp.territory||[]){const cx=Math.round(t.x*S),cy=Math.round(t.y*S);spawns.push([cx,cy]);spawn(n,cx,cy,Math.max(1,Math.round(t.r*S)))}}
+  // random bots
+  const minD=W/(Math.sqrt(RANDOM_BOTS)*1.8);
+  for(let k=0,made=0;made<RANDOM_BOTS&&k<4000;k++){
+    const i=Math.random()*N|0;if(!land[i]||owner[i])continue;const x=i%W,y=i/W|0;
+    if(spawns.some(s=>Math.hypot(s[0]-x,s[1]-y)<minD)||countFree(x,y,4)<30)continue;
+    spawns.push([x,y]);spawn(newNation({},true),x,y,4);made++}
+  fit();$('overlay').style.display='none';
+  if(me){startPlay()}else{phase='spawn';$('hint').style.display='block'}
+  requestAnimationFrame(frame);
+}
+function startPlay(){phase='play';$('hint').style.display='none';$('hud').style.display='flex';
+  $('hf').src=P().flag;$('hn').textContent=P().name+' — '+P().leader}
+
+// ===== Simulation =====
+function economy(n){
+  const max=100+n.tiles*8;
+  n.mp+=(n.tiles*.08+n.mp*.01)*Math.max(0,1-n.mp/max);
+  n.gold+=n.tiles*.03+n.mp*.004}
+function findFrontiers(id){
+  const m=new Map(),add=(t,j)=>{let a=m.get(t);if(!a)m.set(t,a=[]);a.push(j)};
+  for(let i=0;i<N;i++){if(owner[i]!==id)continue;const x=i%W;let j;
+    if(x>0){j=i-1;if(land[j]&&owner[j]!==id)add(owner[j],j)}
+    if(x<W-1){j=i+1;if(land[j]&&owner[j]!==id)add(owner[j],j)}
+    if(i>=W){j=i-W;if(land[j]&&owner[j]!==id)add(owner[j],j)}
+    if(i<N-W){j=i+W;if(land[j]&&owner[j]!==id)add(owner[j],j)}}
+  return m}
+function startAttack(n,t,amt,front,fromMp=true){
+  if(fromMp)n.mp-=amt;n.att++;attacks.push({atk:n.id,def:t,troops:amt,front:front.slice()})}
+function stepAttack(a){ // returns true when finished
+  const n=nations[a.atk];if(!n.alive)return true;
+  const d=a.def?nations[a.def]:null;let rate=Math.max(3,Math.ceil(Math.sqrt(n.tiles)*.8));
+  while(rate-->0){
+    if(!a.front.length)return true;
+    const k=Math.random()*a.front.length|0,i=a.front[k];a.front[k]=a.front[a.front.length-1];a.front.pop();
+    if(owner[i]!==a.def||!land[i])continue;
+    let cost=1,loss=0;if(d){const dn=d.mp/Math.max(1,d.tiles);cost=2+dn*.5;loss=dn*.3}
+    if(a.troops<cost)return true;
+    a.troops-=cost;if(d)d.mp=Math.max(0,d.mp-loss);
+    setOwner(i,a.atk);const x=i%W;
+    if(x>0&&owner[i-1]===a.def&&land[i-1])a.front.push(i-1);
+    if(x<W-1&&owner[i+1]===a.def&&land[i+1])a.front.push(i+1);
+    if(i>=W&&owner[i-W]===a.def&&land[i-W])a.front.push(i-W);
+    if(i<N-W&&owner[i+W]===a.def&&land[i+W])a.front.push(i+W)}
+  return false}
+function botThink(n){
+  const m=findFrontiers(n.id);if(!m.size)return;
+  let t;const neu=m.get(0);
+  if(neu&&Math.random()<.8)t=0;else{let best=1e9;for(const k of m.keys())if(k&&nations[k].mp<best){best=nations[k].mp;t=k}}
+  if(t===undefined)t=0;if(!m.has(t))return;
+  const amt=n.mp*(.25+Math.random()*.3);if(amt<20)return;
+  if(t&&nations[t].mp*.6>amt)return;
+  startAttack(n,t,amt,m.get(t))}
+function tick(){
+  for(let i=1;i<nations.length;i++){const n=nations[i];if(!n.alive)continue;economy(n);
+    if(n.bot&&!n.att&&Math.random()<.015)botThink(n)}
+  for(let i=attacks.length-1;i>=0;i--){const a=attacks[i];if(stepAttack(a)){const n=nations[a.atk];n.att--;if(n.alive)n.mp+=a.troops;attacks.splice(i,1)}}
+  for(let i=ships.length-1;i>=0;i--){const s=ships[i];s.pos+=SHIP_SPEED;if(s.pos>=s.path.length-1){landShip(s);ships.splice(i,1)}}
+}
+
+// ===== Ships =====
+function seaPath(id,T){
+  const tO=owner[T];if(tO===id)return 'own';
+  const tx=T%W,ty=T/W|0,goal=new Uint8Array(N);let any=false;
+  const isT=k=>k>=0&&k<N&&land[k]&&owner[k]===tO;
+  for(let y=-8;y<=8;y++)for(let x=-8;x<=8;x++){const X=tx+x,Y=ty+y;if(X<1||Y<1||X>=W-1||Y>=H-1)continue;const k=Y*W+X;
+    if(!land[k]&&(isT(k-1)||isT(k+1)||isT(k-W)||isT(k+W))){goal[k]=1;any=true}}
+  if(!any)return 'coast';
+  const par=new Int32Array(N).fill(-1),q=new Int32Array(N);let qh=0,qt=0;
+  for(let i=W;i<N-W;i++){if(land[i])continue;
+    if(owner[i-1]===id&&land[i-1]||owner[i+1]===id&&land[i+1]||owner[i-W]===id&&land[i-W]||owner[i+W]===id&&land[i+W]){par[i]=-2;q[qt++]=i}}
+  if(!qt)return 'nocoast';
+  while(qh<qt){const i=q[qh++];
+    if(goal[i]){const p=[];for(let k=i;k>=0;k=par[k])p.push(k);return p.reverse()}
+    const x=i%W,nb=[x>0?i-1:-1,x<W-1?i+1:-1,i>=W?i-W:-1,i<N-W?i+W:-1];
+    for(const j of nb)if(j>=0&&!land[j]&&par[j]===-1){par[j]=i;q[qt++]=j}}
+  return 'blocked'}
+function landShip(s){
+  const n=nations[s.o],g=s.path[s.path.length-1],gx=g%W,gy=g/W|0;if(!n.alive)return;
+  let c=-1;
+  for(let dy=-1;dy<=1&&c<0;dy++)for(let dx=-1;dx<=1;dx++){const k=(gy+dy)*W+gx+dx;if(land[k]&&owner[k]===s.tO&&owner[k]!==s.o){c=k;break}}
+  if(c<0)for(let dy=-1;dy<=1&&c<0;dy++)for(let dx=-1;dx<=1;dx++){const k=(gy+dy)*W+gx+dx;if(land[k]&&owner[k]!==s.o){c=k;break}}
+  if(c<0){n.mp+=s.troops;return}
+  const t=owner[c];let q=[c],seen=new Set([c]),cap=Math.min(30,Math.floor(s.troops/2));
+  for(let h=0;h<q.length&&q.length<=cap;h++){const i=q[h],x=i%W;
+    for(const j of [x>0?i-1:-1,x<W-1?i+1:-1,i>=W?i-W:-1,i<N-W?i+W:-1])if(j>=0&&land[j]&&owner[j]===t&&!seen.has(j)){seen.add(j);q.push(j)}}
+  q=q.slice(0,cap);for(const i of q)setOwner(i,s.o);
+  s.troops=Math.max(0,s.troops-q.length*1.5);
+  const f=findFrontiers(s.o).get(t);
+  if(f&&s.troops>5){n.mp+=s.troops;startAttack(n,t,s.troops,f)}else n.mp+=s.troops;
+  if(s.o===me)toast('Landing made on foreign shores.')}
+
+// ===== UI =====
+let toastT;function toast(m,ms=2500){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',ms)}
+const fmt=v=>Math.floor(v).toLocaleString();
+function renderPanel(){
+  const p=$('panel');if(sel<0||!land[sel]){p.style.display='none';panelKey=null;return}
+  const o=owner[sel],n=o?nations[o]:null,key=o+'|'+phase+'|'+(P()&&P().alive);
+  p.style.display='block';
+  if(key!==panelKey){panelKey=key;const can=phase==='play'&&P().alive&&o!==me;
+    p.innerHTML=(n?`<img class="flag" src="${n.flag}" alt="Flag" onerror="this.style.display='none'">
+      <div class="row"><div class="portrait" title="Leader portrait"></div><div><h2>${n.name}</h2><div style="color:#aab6bd">Leader: ${n.leader}${n.id===me?' (you)':''}</div>${n.alive?'':'<div style="color:var(--bad)">Eliminated</div>'}</div></div>
+      <div class="kv"><span>Wealth</span><b id="pw"></b></div><div class="kv"><span>Manpower</span><b id="pm"></b></div><div class="kv"><span>Territory</span><b id="pt"></b></div>`
+      :`<h2>Unclaimed land</h2><div style="color:#aab6bd">No nation rules here.</div>`)+
+      (can?`<div class="acts"><button id="bl">${o?'Attack by land':'Expand by land'}</button><button id="bs">Send ship (${SHIP_COST}g)</button></div>`:'');
+    if(can){$('bl').onclick=doLand;$('bs').onclick=doShip}}
+  if(n){$('pw').textContent=fmt(n.gold);$('pm').textContent=fmt(n.mp);$('pt').textContent=fmt(n.tiles)+' tiles'}}
+function refresh(){
+  if(phase==='play'){const n=P();$('hg').textContent=fmt(n.gold);$('hm').textContent=fmt(n.mp)+' / '+fmt(100+n.tiles*8);$('ht').textContent=fmt(n.tiles);$('rec').disabled=n.gold<50||!n.alive}
+  renderPanel()}
+setInterval(refresh,250);
+const pct=()=>+$('pct').value/100;
+$('pct').oninput=()=>$('pv').textContent=$('pct').value+'%';
+$('rec').onclick=()=>{const n=P();if(n.gold>=50){n.gold-=50;n.mp+=100;refresh()}};
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{speed=+b.dataset.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b))});
+function doLand(){
+  const n=P(),t=owner[sel],f=findFrontiers(me).get(t),amt=n.mp*pct();
+  if(!f)return toast('Your territory does not border this land. Use a ship.');
+  if(amt<10)return toast('Not enough manpower.');
+  startAttack(n,t,amt,f);toast('Troops sent.')}
+function doShip(){
+  const n=P(),amt=n.mp*pct();
+  if(n.gold<SHIP_COST)return toast('Not enough gold.');if(amt<10)return toast('Not enough manpower.');
+  const r=seaPath(me,sel);
+  if(typeof r==='string')return toast({own:'That land is yours.',coast:'Target has no reachable coast.',nocoast:'You have no ocean access.',blocked:'No unobstructed sea route to that coast.'}[r]);
+  n.gold-=SHIP_COST;n.mp-=amt;ships.push({o:me,path:r,pos:0,troops:amt,tO:owner[sel]});toast('Ship launched.')}
+
+// ===== Camera / input =====
+function fit(){cv.width=innerWidth;cv.height=innerHeight;zoom=Math.min(cv.width/W,cv.height/H)*.95;panX=(cv.width-W*zoom)/2;panY=(cv.height-H*zoom)/2}
+addEventListener('resize',()=>{if(W){cv.width=innerWidth;cv.height=innerHeight}});
+let drag=null;
+cv.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY,px:panX,py:panY,m:false};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'};
+cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>5)drag.m=true;if(drag.m){panX=drag.px+dx;panY=drag.py+dy}};
+cv.onpointerup=e=>{cv.style.cursor='grab';if(drag&&!drag.m)click(e.clientX,e.clientY);drag=null};
+cv.onwheel=e=>{e.preventDefault();const f=e.deltaY<0?1.15:1/1.15,nz=Math.min(40,Math.max(.3,zoom*f));
+  panX=e.clientX-(e.clientX-panX)*nz/zoom;panY=e.clientY-(e.clientY-panY)*nz/zoom;zoom=nz};
+function click(px,py){
+  const x=Math.floor((px-panX)/zoom),y=Math.floor((py-panY)/zoom);
+  if(x<0||y<0||x>=W||y>=H){sel=-1;return renderPanel()}
+  const i=y*W+x;
+  if(phase==='spawn'){
+    if(!land[i]||owner[i])return toast('Choose free land.');
+    if(countFree(x,y,6)<40)return toast('Too little land here. Choose a larger area.');
+    const n=newNation({},false);me=n.id;spawn(n,x,y,6);startPlay();return}
+  sel=land[i]?i:-1;refresh()}
+
+// ===== Render =====
+let last=performance.now(),acc=0;
+function frame(t){
+  acc+=Math.min(250,t-last)*speed;last=t;let k=0;
+  while(acc>=100&&k++<8){acc-=100;if(phase==='play')tick()}
+  if(dirty){offCtx.putImageData(imgData,0,0);dirty=false}
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0d2233';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.imageSmoothingEnabled=false;ctx.setTransform(zoom,0,0,zoom,panX,panY);ctx.drawImage(off,0,0);
+  for(const s of ships){const i=s.path[Math.min(s.path.length-1,Math.floor(s.pos))];
+    ctx.fillStyle=nations[s.o].alive?'#fff':'#999';ctx.strokeStyle='#000';ctx.lineWidth=.4;
+    const r=Math.max(2,5/zoom);ctx.beginPath();ctx.arc(i%W+.5,(i/W|0)+.5,r,0,7);ctx.fill();ctx.stroke()}
+  if(sel>=0){ctx.strokeStyle='#d9a441';ctx.lineWidth=2/zoom;ctx.strokeRect(sel%W-1,(sel/W|0)-1,3,3)}
+  ctx.setTransform(1,0,0,1,0,0);
+  for(let i=1;i<nations.length;i++){const n=nations[i];if(!n.alive||n.tiles<40)continue;
+    const w=Math.min(Math.sqrt(n.tiles)*zoom*.55,72);if(w<16||!n.fi.complete||!n.fi.naturalWidth)continue;
+    const h=w*.66,x=n.sx/n.tiles*zoom+panX,y=n.sy/n.tiles*zoom+panY;
+    ctx.globalAlpha=.9;ctx.drawImage(n.fi,x-w/2,y-h/2,w,h);ctx.globalAlpha=1;ctx.strokeStyle='#000';ctx.lineWidth=1;ctx.strokeRect(x-w/2,y-h/2,w,h)}
+  requestAnimationFrame(frame)}
+
+loadMap(MAP_SRC);
+</script></body></html>
