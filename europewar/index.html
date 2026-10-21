@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Europe Conquest</title>
+<style>
+*{box-sizing:border-box;margin:0;font-family:'Bahnschrift','Agency FB','Arial Narrow',Arial,sans-serif;color:#fff;user-select:none}
+body{background:#000;overflow:hidden}
+canvas{display:block;position:absolute;inset:0}
+.p{position:absolute;background:#000;border-radius:4px;padding:10px 12px;transition:opacity .25s,transform .25s}
+.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
+button,input{background:#141414;border:0;border-radius:3px;padding:7px 12px;font-size:14px}
+button{cursor:pointer;transition:background .15s,transform .1s}
+button:hover{background:#252525}button:active{transform:scale(.95)}
+input[type=range]{padding:0;vertical-align:middle;width:140px}
+h3{font-size:18px;margin:6px 0 2px}.sub{opacity:.6;font-size:13px}
+.fl{width:44px;height:28px;background-size:cover;background-position:center;display:inline-block;vertical-align:middle}
+.por{width:76px;height:96px;background:#111;border-radius:3px;margin:8px 0}
+.row{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:3px 0;gap:10px}.row>span:first-child{opacity:.6}.row.r>span:first-child{opacity:1}
+.btns{display:flex;gap:6px;margin-top:8px}.ic{width:20px;height:20px;vertical-align:middle}
+.pb{height:6px;background:#1a1a1a;border-radius:3px;margin:4px 0 8px}.pb i{display:block;height:100%;background:#4a9;border-radius:3px}
+.m{background:#000;border-radius:4px;padding:7px 10px;margin-bottom:6px;font-size:14px;animation:m 6s forwards}
+@keyframes m{0%{opacity:0;transform:translateX(20px)}5%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+#menu{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center}
+#menu .p{position:static;width:330px}#menu input{width:100%;margin:4px 0 10px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud" class="p hide" style="left:12px;top:12px;width:250px"></div>
+<div id="feed" style="position:absolute;right:12px;top:12px;width:270px;pointer-events:none"></div>
+<div id="info" class="p hide" style="right:12px;top:50%;margin-top:-190px;width:250px"></div>
+<div id="bld" class="p hide" style="left:0;right:0;margin:auto;bottom:70px;width:400px"></div>
+<div id="tech" class="p hide" style="left:0;right:0;margin:auto;top:50px;width:600px;max-height:75vh;overflow:auto"></div>
+<div id="bar" class="p hide" style="left:0;right:0;margin:auto;bottom:14px;width:fit-content">
+ Troops <input type="range" id="rt" min="5" max="100" value="40"> <span id="rv" style="display:inline-block;width:38px">40%</span>
+ <button onclick="conscript()">Conscript 150g</button> <button onclick="togg('bld')">Build</button> <button onclick="togg('tech')">Research</button> <button id="sp" onclick="speedT()">1x</button>
+</div>
+<div id="menu"><div class="p">
+ <h1 style="font-size:26px;letter-spacing:2px">EUROPE CONQUEST</h1><div class="sub" style="margin:4px 0 14px">Drag to pan, scroll to zoom</div>
+ Nation name<input id="nm" value="Kingdom of Aldmark">
+ Bot nations<input id="nb" type="number" value="30" min="0" max="120">
+ <button id="go" disabled style="width:100%">Loading map...</button><div id="err" class="sub" style="margin-top:8px"></div>
+</div></div>
+<script>
+/* ---- CONFIG ---- */
+const MAP='Europemap.jpg', LAND_T=50;   // average brightness >= 50 = land, <= 49 = ocean
+/* Preset nations (for later): {name,short,leader,flag,color:'#rrggbb',regions:[[x,y,radius],...]} */
+const PRESET_NATIONS=[];
+const FLAGS=['de','fr','it','es','pt','pl','se','no','dk','fi','gr','tr','nl','be','at','ch','cz','hu','ro','ua','hr','rs','bg','ie','gb','lt','lv','ee'].map(c=>`https://flagcdn.com/w160/${c}.png`);
+const TITLES=['Kingdom of','Republic of','Duchy of','Empire of','Principality of','Grand Duchy of','Commonwealth of'];
+const C=(r,s,f,l)=>({r:r.split(' '),s:s.split(' '),f:f.split(' '),l:l.split(' ')});
+const CUL=[
+ C('Ash Wor Nor Brad Kent Wes Ely','land shire ford wick mark','Edmund Harold Oliver Arthur Henry Edward','Ashford Wells Hartley Fenwick Marlow Thorne'),
+ C('Aqui Bour Lor Pro Nor Gas Bret','ne gne vence aine tagne','Louis Henri Etienne Gaspard Lucien Armand','Moreau Delacroix Fontaine Beaumont Laurent Dupont'),
+ C('Skand Sver Dan Hald Ulf Nor Gjall','heim land mark vik gard','Harald Bjorn Erik Olaf Magnus Leif','Haraldsen Lindqvist Nordahl Bergstrom Eriksson'),
+ C('Hohen Ober Rhein Bran Sach Thur Frank','burg land stein berg mark','Friedrich Wilhelm Konrad Otto Heinrich Albrecht','Hartmann Weber Brandt Kessler Vogel Lehmann'),
+ C('Vel Mor Bela Zlat Kras Drav Mikh','ovia grad ica vina ostrov','Vladimir Bogdan Milos Casimir Dragan Mieszko','Novak Petrovic Kowalski Volkov Dvorak Horvat'),
+ C('Ligur Tosc Venet Lombar Pied Sard Calabr','ia ana ino ia onia','Giovanni Lorenzo Matteo Cosimo Alberto Marco','Rossi Medici Bianchi Visconti Conti Ferrari'),
+ C('Casti Ara Astur Galic Lusi Navar Cata','a ia lla gon nia','Alfonso Fernando Joaquin Rodrigo Tiago Diego','Mendoza Navarro Castillo Ferreira Alvarez Silva'),
+ C('Kara Yesil Ak Kizil Demir Bey Ana','ova lar istan oglu dag','Mehmet Selim Murat Kemal Osman Emre','Yildiz Demir Kaya Aksoy Celik Ozturk'),
+ C('Thess Pelo Mace Epir Cret Attic Ion','ia onia ika alia os','Nikolaos Dimitrios Andreas Stavros Alexios Theodoros','Papadakis Karras Stavrou Georgiou Makris Laskaris')];
+/* Buildings (icons: Material Design Icons via Iconify) */
+const MIND=14;
+const BT={factory:{n:'Factory',ic:'factory',c:250,d:'+3 income/s'},mine:{n:'Mine',ic:'pickaxe',c:350,d:'+5 income/s'},
+ port:{n:'Port',ic:'anchor',c:300,d:'+4 income/s, coast only'},barracks:{n:'Barracks',ic:'sword-cross',c:400,d:'+2500 max manpower'},
+ univ:{n:'University',ic:'school',c:500,d:'+25% research speed'}};
+const IURL=k=>`https://api.iconify.design/mdi/${BT[k].ic}.svg?color=%23ffffff`,BI={};
+for(const k in BT){BI[k]=new Image();BI[k].src=IURL(k)}
+/* Research + ideologies */
+const KN={inc:'Income',reg:'Manpower regen',max:'Max manpower',ship:'Ship speed',atk:'Attack efficiency',def:'Defense',res:'Research speed'};
+const TECH=[{id:'agri',n:'Agriculture',k:'reg',p:.12},{id:'trade',n:'Trade Routes',k:'inc',p:.12},{id:'conscr',n:'Conscription',k:'max',p:.15},
+ {id:'naval',n:'Naval Engineering',k:'ship',p:.3},{id:'doct',n:'Military Doctrine',k:'atk',p:.1},{id:'fort',n:'Fortifications',k:'def',p:.15},{id:'schol',n:'Scholarship',k:'res',p:.15}];
+const IDEO=[
+ {id:'socdem',n:'Social Democracy',t:1,p:0,m:{reg:.1,inc:.05}},{id:'socialism',n:'Socialism',t:2,p:0,r:'socdem',m:{reg:.15,max:.1,inc:-.05}},
+ {id:'communism',n:'Communism',t:3,p:0,r:'socialism',m:{max:.25,reg:.1,inc:-.15,res:-.1}},
+ {id:'capital',n:'Capitalism',t:1,p:1,m:{inc:.15,max:-.05}},{id:'liberal',n:'Liberalism',t:2,p:1,r:'capital',m:{inc:.1,res:.2,def:-.05}},
+ {id:'libert',n:'Libertarianism',t:3,p:1,r:'liberal',m:{inc:.25,max:-.15,def:-.1}},
+ {id:'conserv',n:'Conservatism',t:1,p:2,m:{def:.15,max:.05}},{id:'nation',n:'Nationalism',t:2,p:2,r:'conserv',m:{atk:.1,max:.1,inc:-.05}},
+ {id:'fascism',n:'Fascism',t:3,p:2,r:'nation',m:{atk:.25,max:.2,inc:-.1,res:-.15}}];
+const pick=a=>a[(Math.random()*a.length)|0],cap=s=>s[0].toUpperCase()+s.slice(1);
+const modText=m=>Object.entries(m).map(([k,v])=>`${KN[k]} ${v>0?'+':''}${Math.round(v*100)}%`).join(', ');
+
+/* ---- STATE ---- */
+const $=id=>document.getElementById(id),cv=$('c'),ctx=cv.getContext('2d');
+let W,H,N,land,owner,comp,px32,imgData,off,octx,bq,par,vis,ftm,stamp=0;
+let z=1,px=0,py=0,dirty=true,phase='load',now=0,tickN=0,speed=1,acc=0,sel=null,player=null,fq=[],ft=[],fh=0,attacks=[],ships=[],blds=[],bmap=new Map,bmode=null,totalLand=0,won=false;
+const nations=[null],FD=2500,OCEAN=pk([14,20,32]),LANDC=pk([72,72,66]);
+function pk(c){return(255<<24)|(c[2]<<16)|(c[1]<<8)|c[0]}
+/* ---- SOUND ---- */
+const SND={start:'gamestart.mp3',menu:'menuopen.mp3',msg:'message_notif.mp3',click:'mouseclick.mp3'},AU={};
+for(const k in SND)AU[k]=new Audio(SND[k]);
+function snd(k){try{const a=AU[k].cloneNode();a.volume=.5;a.play().catch(()=>{})}catch(e){}}
+document.addEventListener('click',e=>{if(e.target.closest('button'))snd('click')});
+function msg(t,s=true){const d=document.createElement('div');d.className='m';d.textContent=t;$('feed').appendChild(d);setTimeout(()=>d.remove(),6000);if(s)snd('msg')}
+/* ---- LOAD MAP ---- */
+const img=new Image();img.src=MAP;
+img.onerror=()=>$('err').textContent='Could not load '+MAP+'. Put it next to this HTML file.';
+img.onload=()=>{
+ W=img.naturalWidth;H=img.naturalHeight;N=W*H;
+ const t=document.createElement('canvas');t.width=W;t.height=H;const c=t.getContext('2d',{willReadFrequently:true});c.drawImage(img,0,0);
+ let d;try{d=c.getImageData(0,0,W,H).data}catch(e){$('err').textContent='Browser blocked pixel reading (file:// restriction). Run a local server in this folder: "python -m http.server" and open http://localhost:8000/game.html';return}
+ land=new Uint8Array(N);owner=new Uint16Array(N);ftm=new Float64Array(N);
+ for(let i=0;i<N;i++){const k=i*4;if((d[k]+d[k+1]+d[k+2])/3>=LAND_T){land[i]=1;totalLand++}}
+ comp=new Uint32Array(N);bq=new Int32Array(N);par=new Int32Array(N);vis=new Uint32Array(N);
+ let cid=0;
+ for(let i=0;i<N;i++)if(!land[i]&&!comp[i]){cid++;let sp=0;bq[sp++]=i;comp[i]=cid;
+  while(sp){const c=bq[--sp],x=c%W;
+   if(x>0&&!land[c-1]&&!comp[c-1]){comp[c-1]=cid;bq[sp++]=c-1}
+   if(x<W-1&&!land[c+1]&&!comp[c+1]){comp[c+1]=cid;bq[sp++]=c+1}
+   if(c>=W&&!land[c-W]&&!comp[c-W]){comp[c-W]=cid;bq[sp++]=c-W}
+   if(c<N-W&&!land[c+W]&&!comp[c+W]){comp[c+W]=cid;bq[sp++]=c+W}}}
+ imgData=new ImageData(W,H);px32=new Uint32Array(imgData.data.buffer);resetPix();
+ off=document.createElement('canvas');off.width=W;off.height=H;octx=off.getContext('2d');
+ resize();phase='menu';$('go').disabled=false;$('go').textContent='Start';$('go').onclick=startGame;
+};
+function resetPix(){for(let i=0;i<N;i++)px32[i]=land[i]?LANDC:OCEAN;dirty=true}
+function resize(){cv.width=innerWidth;cv.height=innerHeight;if(W){z=Math.min(cv.width/W,cv.height/H);px=(cv.width-W*z)/2;py=(cv.height-H*z)/2}}
+addEventListener('resize',resize);
+/* ---- NATIONS ---- */
+function hsl(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))))};return[f(0),f(8),f(4)]}
+function recalc(n){const M={};for(const k in KN){let v=1;for(const t of TECH)if(t.k===k)v+=t.p*(n.tl[t.id]||0);for(const id of n.ideo)v+=IDEO.find(x=>x.id===id).m[k]||0;if(k==='res')v+=.25*n.b.univ;M[k]=Math.max(.2,v)}n.M=M}
+function mk(o){
+ const id=nations.length,cu=pick(CUL),sh=o.short||cap(pick(cu.r)+pick(cu.s));
+ const col=o.color?[1,3,5].map(k=>parseInt(o.color.substr(k,2),16)):hsl((id*137.5)%360,.55+Math.random()*.2,.5);
+ const n={id,short:sh,name:o.name||pick(TITLES)+' '+sh,leader:o.leader||pick(cu.f)+' '+pick(cu.l),flag:o.flag||pick(FLAGS),col,bot:!!o.bot,
+  troops:2500,gold:200,tiles:0,list:[],sx:0,sy:0,alive:true,na:0,ships:0,hex:`rgb(${col})`,tl:{},ideo:[],res:null,b:{factory:0,mine:0,port:0,barracks:0,univ:0}};
+ n.fi=new Image();n.fi.src=n.flag;recalc(n);nations.push(n);return n}
+function paint(i){
+ const o=owner[i];
+ if(!o){px32[i]=land[i]?LANDC:OCEAN;return}
+ const c=nations[o].col;let r=c[0],g=c[1],b=c[2];
+ if(ftm[i]){let t=(now-ftm[i])/FD;if(t>=1){ftm[i]=0}else{const k=.7*(1-t*t*(3-2*t));r+=(255-r)*k;g+=(255-g)*k;b+=(255-b)*k}}
+ const x=i%W;
+ if((x>0&&owner[i-1]&&owner[i-1]!==o)||(x<W-1&&owner[i+1]&&owner[i+1]!==o)||(i>=W&&owner[i-W]&&owner[i-W]!==o)||(i<N-W&&owner[i+W]&&owner[i+W]!==o)){
+  const l=.3*r+.59*g+.11*b,t2=l>110?0:255;r+=(t2-r)*.65;g+=(t2-g)*.65;b+=(t2-b)*.65}
+ px32[i]=(255<<24)|((b|0)<<16)|((g|0)<<8)|(r|0)}
+function paintN(i){paint(i);const x=i%W;if(x>0)paint(i-1);if(x<W-1)paint(i+1);if(i>=W)paint(i-W);if(i<N-W)paint(i+W);dirty=true}
+function setOwner(i,id,anim){
+ const bb=bmap.get(i);if(bb)rmB(bb);
+ const old=owner[i];if(old){const o=nations[old];o.tiles--;o.sx-=i%W;o.sy-=(i/W)|0}
+ owner[i]=id;const n=nations[id];n.tiles++;n.list.push(i);n.sx+=i%W;n.sy+=(i/W)|0;
+ if(anim){ftm[i]=now;fq.push(i);ft.push(now)}else ftm[i]=0;
+ paintN(i)}
+function fade(){
+ while(fh<fq.length&&now-ft[fh]>=FD){paint(fq[fh++]);dirty=true}
+ for(let k=fh;k<fq.length;k++)paint(fq[k]);
+ if(fq.length>fh)dirty=true;
+ if(fh>100000){fq=fq.slice(fh);ft=ft.slice(fh);fh=0}}
+function freeSpot(x,y,r){for(let dy=-r;dy<=r;dy+=4)for(let dx=-r;dx<=r;dx+=4){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<W&&Y<H&&owner[Y*W+X])return false}return true}
+function spawn(n,x,y,r){for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=H||dx*dx+dy*dy>r*r)continue;const i=Y*W+X;if(land[i]&&!owner[i])setOwner(i,n.id,false)}}
+const maxT=n=>(3000+n.tiles*12+2500*n.b.barracks)*n.M.max;
+const inc=n=>(1+n.tiles*.01+3*n.b.factory+5*n.b.mine+4*n.b.port)*n.M.inc;
+/* ---- BUILDINGS ---- */
+const bcost=(n,t)=>Math.round(BT[t].c*(1+.35*n.b[t]));
+function build(n,ty,i){
+ if(owner[i]!==n.id)return'You can only build on your own territory';
+ if(n.gold<bcost(n,ty))return'Not enough gold';
+ const x=i%W,y=(i/W)|0;
+ for(const b of blds)if((b.x-x)**2+(b.y-y)**2<MIND*MIND)return'Too close to another building';
+ if(ty==='port'){let ok=false;for(let dy=-2;dy<=2&&!ok;dy++)for(let dx=-2;dx<=2;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<W&&Y<H&&!land[Y*W+X]){ok=true;break}}if(!ok)return'Ports must be built on the coast'}
+ n.gold-=bcost(n,ty);const b={t:ty,i,x,y,o:n.id};blds.push(b);bmap.set(i,b);n.b[ty]++;recalc(n);return true}
+function rmB(b){blds.splice(blds.indexOf(b),1);bmap.delete(b.i);const n=nations[b.o];n.b[b.t]--;recalc(n);if(n===player)msg('Your '+BT[b.t].n+' was destroyed')}
+/* ---- RESEARCH ---- */
+function items(n){const o=[],last=n.ideo[n.ideo.length-1];
+ for(const t of TECH){const l=n.tl[t.id]||0;if(l<3)o.push({kind:'tech',id:t.id,name:`${t.n} ${l+1}`,cost:300*(l+1),time:25*(l+1)})}
+ for(const x of IDEO)if(last?x.r===last:x.t===1)o.push({kind:'ideo',id:x.id,name:x.n,cost:400*x.t,time:40*x.t});return o}
+function startRes(n,it){if(n.res||n.gold<it.cost)return false;n.gold-=it.cost;n.res={kind:it.kind,id:it.id,name:it.name,left:it.time,total:it.time};return true}
+function research(kind,id){const it=items(player).find(x=>x.kind===kind&&x.id===id);if(!it||phase!=='play')return;
+ if(player.res)return msg('Already researching something',false);if(player.gold<it.cost)return msg('Not enough gold',false);startRes(player,it);techUI();hud()}
+function resTick(n){
+ if(n.res){n.res.left-=n.M.res;if(n.res.left<=0){const r=n.res;n.res=null;if(r.kind==='tech')n.tl[r.id]=(n.tl[r.id]||0)+1;else n.ideo.push(r.id);recalc(n);if(n===player)msg('Research complete: '+r.name)}}
+ else if(n.bot&&Math.random()<.15){const o=items(n).filter(x=>x.cost<=n.gold*.7);if(o.length)startRes(n,pick(o))}}
+/* ---- START ---- */
+function startGame(){
+ snd('start');$('menu').style.display='none';nations.length=1;owner.fill(0);ftm.fill(0);resetPix();attacks=[];ships=[];blds=[];bmap.clear();fq=[];ft=[];fh=0;won=false;
+ const nm=$('nm').value.trim()||'Player Nation';
+ player=mk({name:nm,short:nm.replace(/^(Kingdom|Republic|Duchy|Empire|Principality|Grand Duchy|Commonwealth) of /,'')});
+ for(const p of PRESET_NATIONS){const n=mk({...p,bot:true});for(const[x,y,r]of p.regions||[])spawn(n,x,y,r)}
+ const nb=Math.max(0,Math.min(120,+$('nb').value||0));
+ for(let k=0;k<nb;k++){const n=mk({bot:true});
+  for(let t=0;t<400&&n.tiles<40;t++){const i=(Math.random()*N)|0,x=i%W,y=(i/W)|0;if(land[i]&&!owner[i]&&freeSpot(x,y,30))spawn(n,x,y,9)}
+  if(n.tiles<20)n.alive=false}
+ phase='spawn';cv.style.cursor='crosshair';$('hud').classList.remove('hide');hud();msg('Click on land to choose your starting location',false)}
+/* ---- COMBAT ---- */
+function seedFront(n,tid,click){
+ const L=n.list,pool=new Set,cx=click%W,cy=(click/W)|0,tries=Math.min(6000,L.length*2);
+ for(let k=0;k<tries;k++){const i=L[(Math.random()*L.length)|0];if(owner[i]!==n.id)continue;const x=i%W;
+  if(x>0&&owner[i-1]===tid&&(tid||land[i-1]))pool.add(i-1);
+  if(x<W-1&&owner[i+1]===tid&&(tid||land[i+1]))pool.add(i+1);
+  if(i>=W&&owner[i-W]===tid&&(tid||land[i-W]))pool.add(i-W);
+  if(i<N-W&&owner[i+W]===tid&&(tid||land[i+W]))pool.add(i+W)}
+ const d=j=>{const a=j%W-cx,b=((j/W)|0)-cy;return a*a+b*b};
+ return[...pool].sort((a,b)=>d(a)-d(b)).slice(0,150)}
+function launch(n,tid,tr,click,seed,paid){
+ if(!paid)n.troops-=tr;
+ const cx=click%W,cy=(click/W)|0;
+ const a=attacks.find(a=>a.o===n.id&&a.t===tid&&Math.hypot(a.cx-cx,a.cy-cy)<70);
+ if(a){a.troops+=tr;a.q.push(...seed);return}
+ const s0=seed[0],x=s0%W,y=(s0/W)|0,gx=n.tiles?n.sx/n.tiles:x,gy=n.tiles?n.sy/n.tiles:y,l=Math.hypot(x-gx,y-gy)||1;
+ attacks.push({o:n.id,t:tid,troops:tr,q:seed,h:0,click,cx:x,cy:y,c2x:x,c2y:y,vx:(x-gx)/l,vy:(y-gy)/l,dx:x,dy:y,ang:Math.atan2(y-gy,x-gx)});
+ n.na++;if(tid&&tid===player.id&&n!==player)msg(n.short+' is attacking you!')}
+function endAttack(a){const n=nations[a.o];n.troops+=Math.max(0,a.troops);n.na--;const k=attacks.indexOf(a);if(k>=0)attacks.splice(k,1)}
+/* Wars: if two nations fight, each side's power = committed troops + 25% of reserves. Only the side with MORE power advances; the weaker side bleeds. */
+function stepAttack(a){
+ const n=nations[a.o],d=a.t?nations[a.t]:null;
+ if(!n.alive||(d&&!d.alive)||a.troops<5){endAttack(a);return}
+ let rate=1,ct=null;
+ if(d){ct=attacks.find(b=>b.o===a.t&&b.t===a.o);
+  const own=a.troops+n.troops*.25*n.M.def,their=(ct?ct.troops:0)+d.troops*.25*d.M.def;
+  if(own<=their){if(!ct){a.troops*=.97;d.troops=Math.max(0,d.troops-a.troops*.012)}return}
+  rate=Math.min(1.5,.25+(own/(their+1)-1)*1.2)}
+ let per=Math.ceil((3+Math.sqrt(a.troops)*.45)*rate);
+ while(per-->0){
+  if(a.h>=a.q.length){a.q=seedFront(n,a.t,a.click);a.h=0;if(!a.q.length){endAttack(a);return}}
+  const i=a.q[a.h++];
+  if(a.h>4000&&a.h*2>a.q.length){a.q=a.q.slice(a.h);a.h=0}
+  if(owner[i]!==a.t||!land[i])continue;
+  const x=i%W;
+  if(!((x>0&&owner[i-1]===n.id)||(x<W-1&&owner[i+1]===n.id)||(i>=W&&owner[i-W]===n.id)||(i<N-W&&owner[i+W]===n.id)))continue;
+  const dens=d?d.troops/Math.max(d.tiles,1)*d.M.def:0,cost=(d?2+dens*.45:1.3)/n.M.atk;
+  if(a.troops<cost){endAttack(a);return}
+  a.troops-=cost;
+  if(d){const l=cost*.6;if(ct)ct.troops=Math.max(0,ct.troops-l);else d.troops=Math.max(0,d.troops-l)}
+  setOwner(i,n.id,true);
+  const y=(i/W)|0;a.cx+=(x-a.cx)*.03;a.cy+=(y-a.cy)*.03;a.c2x+=(x-a.c2x)*.004;a.c2y+=(y-a.c2y)*.004;
+  if(x>0&&owner[i-1]===a.t)a.q.push(i-1);if(x<W-1&&owner[i+1]===a.t)a.q.push(i+1);
+  if(i>=W&&owner[i-W]===a.t)a.q.push(i-W);if(i<N-W&&owner[i+W]===a.t)a.q.push(i+W);
+  if(d&&d.tiles<=0){eliminate(d,n);endAttack(a);return}}}
+function eliminate(d,n){
+ d.alive=false;n.gold+=d.gold*.5;d.gold=0;
+ for(const a of attacks.slice())if(a.o===d.id)endAttack(a);
+ msg(`${d.short} was conquered by ${n.short}`,d===player||n===player);
+ if(d===player){phase='over';msg('You have been eliminated.')}}
+/* ---- SHIPS ---- */
+function clear(a,b){const ax=a%W,ay=(a/W)|0,bx=b%W,by=(b/W)|0,L=Math.max(Math.abs(bx-ax),Math.abs(by-ay));
+ for(let k=1;k<L;k++){const x=Math.round(ax+(bx-ax)*k/L),y=Math.round(ay+(by-ay)*k/L);if(land[y*W+x])return false}return true}
+function sendShip(n,tile,ratio,pl){
+ const fail=m=>{if(pl)msg(m,false);return false};
+ if(n.ships>=3+(n.tl.naval||0))return fail('Maximum ships at sea reached');
+ const tr=n.troops*ratio;if(tr<30)return fail('Not enough troops');
+ if(!land[tile]||owner[tile]===n.id)return fail('That land is already yours');
+ const cs=new Set,L=n.list;
+ for(let k=0;k<Math.min(4000,L.length*2);k++){const i=L[(Math.random()*L.length)|0];if(owner[i]!==n.id)continue;const x=i%W;
+  if(x>0&&!land[i-1])cs.add(comp[i-1]);if(x<W-1&&!land[i+1])cs.add(comp[i+1]);if(i>=W&&!land[i-W])cs.add(comp[i-W]);if(i<N-W&&!land[i+W])cs.add(comp[i+W])}
+ if(!cs.size)return fail('You need ocean access to send ships');
+ /* find nearest coastal pixel connected (by land) to the clicked pixel, on a sea we can reach */
+ const s1=++stamp,to=owner[tile];let h=0,t=0,Lt=-1,w=-1,fL=-1,fw=-1;bq[t++]=tile;vis[tile]=s1;
+ while(h<t&&t<60000){const c=bq[h++],x=c%W,nb=[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1];let cw=-1;
+  for(const j of nb)if(j>=0&&!land[j]&&cs.has(comp[j])){cw=j;break}
+  if(cw>=0){if(owner[c]===to){Lt=c;w=cw;break}if(fL<0){fL=c;fw=cw}}
+  for(const j of nb)if(j>=0&&land[j]&&vis[j]!==s1&&owner[j]!==n.id){vis[j]=s1;bq[t++]=j}}
+ if(Lt<0){Lt=fL;w=fw}
+ if(Lt<0)return fail('No coast connected to that land is reachable by sea');
+ const s2=++stamp;h=0;t=0;let f=-1;bq[t++]=w;vis[w]=s2;par[w]=-1;
+ while(h<t){const c=bq[h++],x=c%W;
+  if((x>0&&owner[c-1]===n.id)||(x<W-1&&owner[c+1]===n.id)||(c>=W&&owner[c-W]===n.id)||(c<N-W&&owner[c+W]===n.id)){f=c;break}
+  if(x>0&&!land[c-1]&&vis[c-1]!==s2){vis[c-1]=s2;par[c-1]=c;bq[t++]=c-1}
+  if(x<W-1&&!land[c+1]&&vis[c+1]!==s2){vis[c+1]=s2;par[c+1]=c;bq[t++]=c+1}
+  if(c>=W&&!land[c-W]&&vis[c-W]!==s2){vis[c-W]=s2;par[c-W]=c;bq[t++]=c-W}
+  if(c<N-W&&!land[c+W]&&vis[c+W]!==s2){vis[c+W]=s2;par[c+W]=c;bq[t++]=c+W}}
+ if(f<0)return fail('No clear sea route to that land');
+ const path=[];for(let c=f;c!==-1;c=par[c])path.push(c);
+ const pts=[path[0]];let i=0;
+ while(i<path.length-1){let j=Math.min(path.length-1,i+80);while(j>i+1&&!clear(path[i],path[j]))j--;pts.push(path[j]);i=j}
+ const xy=pts.map(p=>({x:p%W+.5,y:((p/W)|0)+.5})),cum=[0];
+ for(let k=1;k<xy.length;k++)cum.push(cum[k-1]+Math.hypot(xy[k].x-xy[k-1].x,xy[k].y-xy[k-1].y));
+ n.troops-=tr;n.ships++;ships.push({o:n.id,xy,cum,len:cum[cum.length-1],pos:0,v:1.3*n.M.ship,troops:tr,L:Lt});
+ if(pl)msg('Ship launched',false);return true}
+function posAt(s,d){let k=0;while(k<s.xy.length-2&&s.cum[k+1]<d)k++;const a=s.xy[k],b=s.xy[k+1]||a,sl=(s.cum[k+1]-s.cum[k])||1,f=Math.max(0,Math.min(1,(d-s.cum[k])/sl));
+ return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,a:Math.atan2(b.y-a.y,b.x-a.x)}}
+function stepShip(s){
+ s.pos+=s.v;const n=nations[s.o];
+ if(s.pos<s.len)return true;
+ n.ships--;if(!n.alive)return false;
+ const t=owner[s.L];
+ if(t===n.id)n.troops+=s.troops;else{launch(n,t,s.troops,s.L,[s.L],true);if(n===player)msg('Your troops have landed')}
+ return false}
+/* ---- BOT AI ---- */
+function ai(n){
+ if(Math.random()<.25&&n.list.length){const ty=pick(Object.keys(BT));if(n.gold>bcost(n,ty)*1.3)for(let k=0;k<15;k++){const i=n.list[(Math.random()*n.list.length)|0];if(owner[i]===n.id&&build(n,ty,i)===true)break}}
+ if(n.na>=2||n.troops<maxT(n)*.3)return;
+ const L=n.list,c0=[],c1=[];
+ for(let k=0;k<150&&L.length;k++){const i=L[(Math.random()*L.length)|0];if(owner[i]!==n.id)continue;const x=i%W;
+  for(const j of[x>0?i-1:-1,x<W-1?i+1:-1,i>=W?i-W:-1,i<N-W?i+W:-1])if(j>=0&&land[j]&&owner[j]!==n.id)(owner[j]?c1:c0).push(j)}
+ const tr=n.troops*(.2+Math.random()*.3);
+ if(c0.length&&Math.random()<.8){const j=pick(c0),s=seedFront(n,0,j);if(s.length)return launch(n,0,tr,j,s)}
+ if(c1.length){const j=pick(c1),d=nations[owner[j]];if(d.troops<n.troops*1.2||Math.random()<.1){const s=seedFront(n,d.id,j);if(s.length)return launch(n,d.id,tr,j,s)}}
+ if((!c0.length&&!c1.length&&Math.random()<.5)||Math.random()<.06){
+  for(let t=0;t<60;t++){const i=(Math.random()*N)|0;if(land[i]&&owner[i]!==n.id){sendShip(n,i,.3,false);break}}}}
+/* ---- TICK ---- */
+function tick(){
+ tickN++;
+ for(const a of attacks.slice())if(attacks.includes(a))stepAttack(a);
+ ships=ships.filter(stepShip);
+ for(const n of nations){if(n&&n.alive&&n.bot&&(tickN+n.id)%30===0)ai(n)}
+ if(tickN%10===0){
+  for(const n of nations){if(!n||!n.alive)continue;
+   const m=maxT(n);n.troops=Math.min(m,n.troops+(.04*n.troops*Math.max(0,1-n.troops/m)+4)*n.M.reg);n.gold+=inc(n);resTick(n);
+   if(n.list.length>n.tiles*2+200)n.list=[...new Set(n.list.filter(i=>owner[i]===n.id))]}
+  hud();if(sel!=null)showInfo(sel,true);
+  if(!$('tech').classList.contains('hide'))techUI();if(!$('bld').classList.contains('hide'))bldUI();
+  if(!won&&player.tiles>=totalLand*.7){won=true;msg('Victory! You control 70% of Europe.')}}}
+/* ---- UI ---- */
+const f=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e4?(v/1e3).toFixed(1)+'K':Math.floor(v);
+const flagStyle=n=>`background-image:url(${n.flag}),linear-gradient(${n.hex},${n.hex})`;
+const ideoName=n=>n.ideo.length?IDEO.find(x=>x.id===n.ideo[n.ideo.length-1]).n:'None';
+function hud(){
+ const n=player;if(!n)return;
+ $('hud').innerHTML=`<span class="fl" style="${flagStyle(n)}"></span> <b style="font-size:17px;margin-left:6px">${n.name}</b>
+ <div style="height:8px"></div>
+ <div class="row"><span>Manpower</span><span>${f(n.troops)} / ${f(maxT(n))}</span></div>
+ <div class="row"><span>Economy</span><span>${f(n.gold)} (+${inc(n).toFixed(1)}/s)</span></div>
+ <div class="row"><span>Territory</span><span>${f(n.tiles)} (${(n.tiles/totalLand*100).toFixed(1)}%)</span></div>
+ <div class="row"><span>Ideology</span><span>${ideoName(n)}</span></div>
+ <div class="row"><span>Research</span><span>${n.res?n.res.name+' '+Math.round((1-n.res.left/n.res.total)*100)+'%':'Idle'}</span></div>`}
+function showInfo(i,silent){
+ sel=i;const o=owner[i],n=o?nations[o]:null,p=$('info');
+ let h=n?`<span class="fl" style="${flagStyle(n)};width:64px;height:40px"></span><h3>${n.name}</h3><div class="sub">Leader: ${n.leader}</div><div class="por"></div>
+  <div class="row"><span>Wealth</span><span>${f(n.gold)}</span></div><div class="row"><span>Manpower</span><span>${f(n.troops)}</span></div><div class="row"><span>Territory</span><span>${f(n.tiles)}</span></div><div class="row"><span>Ideology</span><span>${ideoName(n)}</span></div>`
+  :`<h3>Unclaimed land</h3><div class="sub">No nation controls this territory</div>`;
+ if(n!==player)h+=`<div class="btns"><button onclick="attackSel(0)">${n?'Attack':'Expand'}</button><button onclick="attackSel(1)">Send ship</button></div>`;
+ if(!silent&&p.classList.contains('hide'))snd('menu');
+ p.innerHTML=h;p.classList.remove('hide')}
+function attackSel(ship){
+ if(sel==null||phase!=='play')return;
+ const n=player,tid=owner[sel];if(tid===n.id)return;
+ const ratio=$('rt').value/100,tr=n.troops*ratio;if(tr<30)return msg('Not enough troops',false);
+ if(!ship){const s=seedFront(n,tid,sel);if(s.length){launch(n,tid,tr,sel,s);hud();return}}
+ if(sendShip(n,sel,ratio,true))hud()}
+function conscript(){const n=player;if(phase!=='play'||n.gold<150)return;n.gold-=150;n.troops=Math.min(maxT(n),n.troops+400);hud()}
+function speedT(){speed=speed===1?2:speed===2?4:1;$('sp').textContent=speed+'x'}
+function togg(id){if(phase!=='play')return;const e=$(id),open=e.classList.contains('hide');
+ for(const k of['bld','tech'])$(k).classList.add('hide');
+ if(open){(id==='bld'?bldUI:techUI)();e.classList.remove('hide');snd('menu')}}
+function bldUI(){$('bld').innerHTML='<h3>Construct</h3><div class="sub" style="margin-bottom:6px">Then click your territory. Buildings need '+MIND+'+ tiles of spacing, so more land = more buildings.</div>'+
+ Object.keys(BT).map(k=>`<div class="row r"><span><img class="ic" src="${IURL(k)}"> ${BT[k].n} <span class="sub">${BT[k].d} (own ${player.b[k]})</span></span><button onclick="setB('${k}')">${bcost(player,k)}g</button></div>`).join('')}
+function setB(k){bmode=k;$('bld').classList.add('hide');cv.style.cursor='crosshair';msg('Click your territory to place a '+BT[k].n+' (Esc to cancel)',false)}
+function techUI(){
+ const n=player;let h='<h3>Research</h3>';
+ h+=n.res?`<div class="sub">${n.res.name} - ${Math.ceil(n.res.left/n.M.res)}s left</div><div class="pb"><i style="width:${(1-n.res.left/n.res.total)*100}%"></i></div>`:'<div class="sub" style="margin-bottom:6px">Idle. One research at a time; Universities speed it up.</div>';
+ h+=TECH.map(t=>{const l=n.tl[t.id]||0;return`<div class="row r"><span>${t.n} <span class="sub">Lv ${l}/3 - ${KN[t.k]} +${Math.round(t.p*100)}%/lv</span></span>${l<3?`<button onclick="research('tech','${t.id}')">${300*(l+1)}g / ${25*(l+1)}s</button>`:'<span class="sub">Max</span>'}</div>`}).join('');
+ h+='<h3 style="margin-top:12px">Ideology</h3><div class="sub" style="margin-bottom:6px">Pick a path; each step adds buffs and drawbacks.</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+ const av=items(n);
+ for(let p=0;p<3;p++)h+='<div>'+IDEO.filter(x=>x.p===p).map(x=>{const own=n.ideo.includes(x.id),a=av.find(it=>it.id===x.id);
+  return`<div style="margin-bottom:10px;opacity:${own||a?1:.4}"><b>${x.n}</b> ${own?'(active)':''}<div class="sub" style="margin:2px 0 4px">${modText(x.m)}</div>${a?`<button onclick="research('ideo','${x.id}')">${a.cost}g / ${a.time}s</button>`:''}</div>`}).join('')+'</div>';
+ $('tech').innerHTML=h+'</div>'}
+$('rt').oninput=e=>$('rv').textContent=e.target.value+'%';
+/* ---- INPUT ---- */
+let drag=null;
+cv.onmousedown=e=>{drag={x:e.clientX,y:e.clientY,px,py,m:0}};
+addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>4)drag.m=1;if(drag.m){px=drag.px+dx;py=drag.py+dy}});
+addEventListener('mouseup',e=>{if(drag&&!drag.m&&e.target===cv)clickMap(e);drag=null});
+addEventListener('keydown',e=>{if(e.key==='Escape'){bmode=null;cv.style.cursor='default';$('bld').classList.add('hide');$('tech').classList.add('hide')}});
+cv.addEventListener('wheel',e=>{e.preventDefault();const nz=Math.max(.2,Math.min(40,z*Math.exp(-e.deltaY*.0015)));px=e.clientX-(e.clientX-px)*nz/z;py=e.clientY-(e.clientY-py)*nz/z;z=nz},{passive:false});
+function clickMap(e){
+ const x=Math.floor((e.clientX-px)/z),y=Math.floor((e.clientY-py)/z);
+ if(x<0||y<0||x>=W||y>=H||!(phase==='spawn'||phase==='play'||phase==='over'))return;
+ const i=y*W+x;
+ if(phase==='spawn'){
+  if(!land[i]||owner[i]||!freeSpot(x,y,12))return msg('Choose free land away from other nations',false);
+  spawn(player,x,y,9);phase='play';cv.style.cursor='default';$('bar').classList.remove('hide');hud();msg('Click territory to inspect it. Attack or expand with the troop slider.',false);return}
+ if(bmode){if(!land[i])return;const r=build(player,bmode,i);if(r===true){msg(BT[bmode].n+' built',false);bmode=null;cv.style.cursor='default';hud()}else msg(r,false);return}
+ if(land[i])showInfo(i);else{sel=null;$('info').classList.add('hide')}}
+/* ---- RENDER ---- */
+const wrap=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a};
+const FONT='Bahnschrift, Arial';
+function draw(){
+ ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
+ if(!off)return;
+ if(dirty){octx.putImageData(imgData,0,0);dirty=false}
+ ctx.setTransform(z,0,0,z,px,py);ctx.imageSmoothingEnabled=false;ctx.drawImage(off,0,0);
+ ctx.setTransform(1,0,0,1,0,0);ctx.textAlign='center';ctx.textBaseline='middle';
+ /* nation names + flags (square corners, shadow only) */
+ for(const n of nations){if(!n||!n.alive||n.tiles<200)continue;
+  const fs=Math.min(26,Math.sqrt(n.tiles)*z*.28);if(fs<8)continue;
+  const X=n.sx/n.tiles*z+px,Y=n.sy/n.tiles*z+py;
+  ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=4;ctx.font=`${fs}px ${FONT}`;ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillText(n.short,X,Y);
+  const fw=fs*2,fh=fs*1.3,fy=Y+fs*.75;ctx.shadowBlur=8;
+  if(n.fi.complete&&n.fi.naturalWidth)ctx.drawImage(n.fi,X-fw/2,fy,fw,fh);else{ctx.fillStyle=n.hex;ctx.fillRect(X-fw/2,fy,fw,fh)}}
+ ctx.shadowBlur=0;
+ /* buildings */
+ for(const b of blds){const X=(b.x+.5)*z+px,Y=(b.y+.5)*z+py;if(X<-20||Y<-20||X>cv.width+20||Y>cv.height+20)continue;
+  const r=Math.max(7,Math.min(16,z*4));
+  ctx.fillStyle='rgba(0,0,0,.85)';ctx.beginPath();ctx.arc(X,Y,r+2,0,7);ctx.fill();
+  ctx.fillStyle=nations[b.o].hex;ctx.beginPath();ctx.arc(X,Y,r,0,7);ctx.fill();
+  const im=BI[b.t];if(im.complete&&im.naturalWidth)ctx.drawImage(im,X-r*.7,Y-r*.7,r*1.4,r*1.4);else{ctx.fillStyle='#fff';ctx.font=`bold ${r}px ${FONT}`;ctx.fillText(BT[b.t].n[0],X,Y)}}
+ /* ships */
+ const tf=Math.min(1,acc/100);
+ for(const s of ships){
+  const p=posAt(s,Math.min(s.len,s.pos+s.v*tf)),X=p.x*z+px,Y=p.y*z+py,r=Math.max(5,z*1.6);
+  ctx.save();ctx.translate(X,Y);ctx.rotate(p.a);
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(r*1.7,0);ctx.lineTo(-r,-r);ctx.lineTo(-r*.5,0);ctx.lineTo(-r,r);ctx.fill();
+  ctx.fillStyle=nations[s.o].hex;ctx.beginPath();ctx.moveTo(r*1.2,0);ctx.lineTo(-r*.6,-r*.6);ctx.lineTo(-r*.3,0);ctx.lineTo(-r*.6,r*.6);ctx.fill();ctx.restore();
+  ctx.shadowColor='#000';ctx.shadowBlur=4;ctx.font=`bold 11px ${FONT}`;ctx.fillStyle='#fff';ctx.fillText(Math.round(s.troops),X,Y-r-8);ctx.shadowBlur=0}
+ /* invasion labels: tweened, rotated toward movement, sized by troops */
+ ctx.shadowColor='rgba(0,0,0,.95)';ctx.shadowBlur=5;
+ for(const a of attacks){
+  a.dx+=(a.cx-a.dx)*.06;a.dy+=(a.cy-a.dy)*.06;
+  a.vx+=((a.cx-a.c2x)-a.vx)*.03;a.vy+=((a.cy-a.c2y)-a.vy)*.03;
+  let t=Math.atan2(a.vy,a.vx);if(t>Math.PI/2||t<-Math.PI/2)t=wrap(t+Math.PI);
+  a.ang+=wrap(t-a.ang)*.06;
+  const X=a.dx*z+px,Y=a.dy*z+py;if(X<-80||Y<-80||X>cv.width+80||Y>cv.height+80)continue;
+  const fs=(9+3.2*Math.log2(1+a.troops/40))*Math.min(1.6,Math.max(.8,Math.sqrt(z)));
+  ctx.save();ctx.translate(X,Y);ctx.rotate(a.ang);ctx.font=`bold ${fs}px ${FONT}`;ctx.fillStyle='#fff';ctx.fillText(Math.round(a.troops),0,0);ctx.restore()}
+ ctx.shadowBlur=0}
+function loop(t){
+ const dt=t-(loop.l||t);loop.l=t;now=t;
+ if(phase==='play'){acc=Math.min(acc+dt*speed,600);while(acc>=100){acc-=100;tick()}}
+ fade();draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script></body></html>
