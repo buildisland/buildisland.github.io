@@ -19,30 +19,58 @@ h3{font-size:18px;margin:6px 0 2px}.sub{opacity:.6;font-size:13px}
 .m{background:#000;border-radius:4px;padding:7px 10px;margin-bottom:6px;font-size:14px;animation:m 6s forwards}
 @keyframes m{0%{opacity:0;transform:translateX(20px)}5%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
 #menu{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center}
-#menu .p{position:static;width:330px}#menu input{width:100%;margin:4px 0 10px}
+#menu .p{position:static;width:400px;max-height:94vh;overflow:auto}#menu input,#menu select{width:100%;margin:4px 0 10px}
+select{background:#141414;border:0;border-radius:3px;padding:7px 12px;font-size:14px}
+.fgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:4px 0;max-height:110px;overflow:auto}
+.fp{height:28px;background-size:cover;background-position:center;cursor:pointer;opacity:.45;transition:opacity .15s}.fp.sel,.fp:hover{opacity:1}
+.card{background:#101010;border-radius:4px;padding:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.dis{opacity:.4}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="p hide" style="left:12px;top:12px;width:250px"></div>
 <div id="feed" style="position:absolute;right:12px;top:12px;width:270px;pointer-events:none"></div>
 <div id="info" class="p hide" style="right:12px;top:50%;margin-top:-190px;width:250px"></div>
 <div id="bld" class="p hide" style="left:0;right:0;margin:auto;bottom:70px;width:400px"></div>
-<div id="tech" class="p hide" style="left:0;right:0;margin:auto;top:50px;width:600px;max-height:75vh;overflow:auto"></div>
+<div id="tech" class="p hide" style="left:0;right:0;margin:auto;top:50px;width:680px;max-height:78vh;overflow:auto"></div>
 <div id="bar" class="p hide" style="left:0;right:0;margin:auto;bottom:14px;width:fit-content">
  Troops <input type="range" id="rt" min="5" max="100" value="40"> <span id="rv" style="display:inline-block;width:38px">40%</span>
  <button onclick="conscript()">Conscript 150g</button> <button onclick="togg('bld')">Build</button> <button onclick="togg('tech')">Research</button> <button id="sp" onclick="speedT()">1x</button>
 </div>
 <div id="menu"><div class="p">
  <h1 style="font-size:26px;letter-spacing:2px">EUROPE CONQUEST</h1><div class="sub" style="margin:4px 0 14px">Drag to pan, scroll to zoom</div>
- Nation name<input id="nm" value="Kingdom of Aldmark">
- Bot nations<input id="nb" type="number" value="30" min="0" max="120">
- <button id="go" disabled style="width:100%">Loading map...</button><div id="err" class="sub" style="margin-top:8px"></div>
+ Mode<select id="mode"><option value="rand">Random Nations</option><option value="pre">Pre-Existing Nations [BETA]</option></select>
+ <div id="randopts">Nation name<input id="nm" value="Kingdom of Aldmark">Bot nations<input id="nb" type="number" value="30" min="0" max="120">
+  Flag<div id="flags" class="fgrid"></div><input id="fu" placeholder="Custom flag image URL (optional)"></div>
+ <div id="preopts" style="display:none">Map<select id="mapsel"></select>Play as<select id="plsel"></select></div>
+ <button id="go" style="width:100%">Start</button><div id="err" class="sub" style="margin-top:8px"></div>
 </div></div>
 <script>
 /* ---- CONFIG ---- */
 const MAP='Europemap.jpg', LAND_T=50;   // average brightness >= 50 = land, <= 49 = ocean
 /* Preset nations (for later): {name,short,leader,flag,color:'#rrggbb',regions:[[x,y,radius],...]} */
 const PRESET_NATIONS=[];
-const FLAGS=['de','fr','it','es','pt','pl','se','no','dk','fi','gr','tr','nl','be','at','ch','cz','hu','ro','ua','hr','rs','bg','ie','gb','lt','lv','ee'].map(c=>`https://flagcdn.com/w160/${c}.png`);
+const flagUrl=c=>`https://flagcdn.com/w160/${c}.png`;
+const FC=['de','fr','it','es','pt','pl','se','no','dk','fi','gr','tr','nl','be','at','ch','cz','hu','ro','ua','hr','rs','bg','ie','gb','lt','lv','ee','sk','si','ba','mk','al','me','by','is','lu','cy','mt','md'];
+const FLAGS=FC.map(flagUrl);let pflag=FLAGS[0],byId={};
+/* ============ MAP CONFIG ============
+ To add a map: copy an entry, set `file` (image next to this html) and list its nations.
+ Image rules: black = ocean, white = unclaimed land, any nation's `color` pixels = that nation's land.
+ Nation fields: id (unique), name, short, leader, flag (url), color ('#rrggbb' = exact color used in the image),
+   troops (starting manpower), gold (optional), focuses (optional list, done in order unless `req:['otherFocusId']` is given).
+ Focus fields: id, name, desc, time (seconds), cost (gold, optional), effects:[...], run:(nation,api)=>{} (optional custom code).
+ Effect types: {type:'gold',amount} {type:'troops',amount} {type:'annex',target:'<nation id>'} {type:'buff',key,value}
+   buff keys: inc reg max ship atk def res  (value .15 = +15%)
+ The colors below are PLACEHOLDERS: change them to the exact colors used in your image. */
+const MAPS={
+ y2026:{label:'Europe 2026 [BETA]',file:'Europemap_wpresetcountries.jpg',nations:[
+  {id:'germany',name:'Federal Republic of Germany',short:'Germany',leader:'Friedrich Merz',flag:flagUrl('de'),color:'#ff0000',troops:20000,gold:1500,focuses:[
+   {id:'industry',name:'Start Industrializing',desc:'Gain 500 gold.',time:60,effects:[{type:'gold',amount:500}]},
+   {id:'anschluss',name:'Anschluss',desc:'Annex Austria, taking its land, gold, manpower and buildings.',time:30,effects:[{type:'annex',target:'austria'}]},
+   {id:'rearm',name:'Rearmament',desc:'+15% max manpower.',time:45,cost:300,effects:[{type:'buff',key:'max',value:.15}]}]},
+  {id:'austria',name:'Republic of Austria',short:'Austria',leader:'Alexander Van der Bellen',flag:flagUrl('at'),color:'#ff8000',troops:8000},
+  {id:'france',name:'French Republic',short:'France',leader:'Emmanuel Macron',flag:flagUrl('fr'),color:'#0000ff',troops:18000,focuses:[
+   {name:'Trade Reforms',desc:'+12% income.',time:40,effects:[{type:'buff',key:'inc',value:.12}]}]}]},
+ y1936:{label:'Europe 1936',file:'Europemap_1936.jpg',nations:[]},
+ y1914:{label:'Europe 1914',file:'Europemap_1914.jpg',nations:[]}};
 const TITLES=['Kingdom of','Republic of','Duchy of','Empire of','Principality of','Grand Duchy of','Commonwealth of'];
 const C=(r,s,f,l)=>({r:r.split(' '),s:s.split(' '),f:f.split(' '),l:l.split(' ')});
 const CUL=[
@@ -80,7 +108,7 @@ const modText=m=>Object.entries(m).map(([k,v])=>`${KN[k]} ${v>0?'+':''}${Math.ro
 const $=id=>document.getElementById(id),cv=$('c'),ctx=cv.getContext('2d');
 let W,H,N,land,owner,comp,px32,imgData,off,octx,bq,par,vis,ftm,stamp=0;
 let z=1,px=0,py=0,dirty=true,phase='load',now=0,tickN=0,speed=1,acc=0,sel=null,player=null,fq=[],ft=[],fh=0,attacks=[],ships=[],blds=[],bmap=new Map,bmode=null,totalLand=0,won=false;
-const nations=[null],FD=2500,OCEAN=pk([14,20,32]),LANDC=pk([72,72,66]);
+const nations=[null],FD=2500,OCEAN=pk([92,164,222]),LANDC=pk([218,200,158]);
 function pk(c){return(255<<24)|(c[2]<<16)|(c[1]<<8)|c[0]}
 /* ---- SOUND ---- */
 const SND={start:'gamestart.mp3',menu:'menuopen.mp3',msg:'message_notif.mp3',click:'mouseclick.mp3'},AU={};
@@ -89,50 +117,55 @@ function snd(k){try{const a=AU[k].cloneNode();a.volume=.5;a.play().catch(()=>{})
 document.addEventListener('click',e=>{if(e.target.closest('button'))snd('click')});
 function msg(t,s=true){const d=document.createElement('div');d.className='m';d.textContent=t;$('feed').appendChild(d);setTimeout(()=>d.remove(),6000);if(s)snd('msg')}
 /* ---- LOAD MAP ---- */
-const img=new Image();img.src=MAP;
-img.onerror=()=>$('err').textContent='Could not load '+MAP+'. Put it next to this HTML file.';
-img.onload=()=>{
- W=img.naturalWidth;H=img.naturalHeight;N=W*H;
- const t=document.createElement('canvas');t.width=W;t.height=H;const c=t.getContext('2d',{willReadFrequently:true});c.drawImage(img,0,0);
- let d;try{d=c.getImageData(0,0,W,H).data}catch(e){$('err').textContent='Browser blocked pixel reading (file:// restriction). Run a local server in this folder: "python -m http.server" and open http://localhost:8000/game.html';return}
- land=new Uint8Array(N);owner=new Uint16Array(N);ftm=new Float64Array(N);
- for(let i=0;i<N;i++){const k=i*4;if((d[k]+d[k+1]+d[k+2])/3>=LAND_T){land[i]=1;totalLand++}}
- comp=new Uint32Array(N);bq=new Int32Array(N);par=new Int32Array(N);vis=new Uint32Array(N);
- let cid=0;
- for(let i=0;i<N;i++)if(!land[i]&&!comp[i]){cid++;let sp=0;bq[sp++]=i;comp[i]=cid;
-  while(sp){const c=bq[--sp],x=c%W;
-   if(x>0&&!land[c-1]&&!comp[c-1]){comp[c-1]=cid;bq[sp++]=c-1}
-   if(x<W-1&&!land[c+1]&&!comp[c+1]){comp[c+1]=cid;bq[sp++]=c+1}
-   if(c>=W&&!land[c-W]&&!comp[c-W]){comp[c-W]=cid;bq[sp++]=c-W}
-   if(c<N-W&&!land[c+W]&&!comp[c+W]){comp[c+W]=cid;bq[sp++]=c+W}}}
- imgData=new ImageData(W,H);px32=new Uint32Array(imgData.data.buffer);resetPix();
- off=document.createElement('canvas');off.width=W;off.height=H;octx=off.getContext('2d');
- resize();phase='menu';$('go').disabled=false;$('go').textContent='Start';$('go').onclick=startGame;
-};
+const COLOR_TOL=90;  // how far (RGB distance) a pixel may be from a nation color and still count (JPEG blur)
+function loadMap(file,pre){return new Promise((res,rej)=>{
+ const im=new Image();im.onerror=()=>rej('Could not load '+file+'. Put it next to this HTML file.');
+ im.onload=()=>{
+  W=im.naturalWidth;H=im.naturalHeight;N=W*H;
+  const t=document.createElement('canvas');t.width=W;t.height=H;const c=t.getContext('2d',{willReadFrequently:true});c.drawImage(im,0,0);
+  let d;try{d=c.getImageData(0,0,W,H).data}catch(e){return rej('Browser blocked pixel reading (file:// restriction). Run a local server in this folder: "python -m http.server" and open http://localhost:8000/game.html')}
+  land=new Uint8Array(N);owner=new Uint16Array(N);ftm=new Float64Array(N);totalLand=0;
+  const map=new Uint8Array(N),pc=pre.map(p=>[1,3,5].map(k=>parseInt(p.color.substr(k,2),16)));
+  for(let i=0;i<N;i++){const k=i*4,r=d[k],g=d[k+1],b=d[k+2];let m=0;
+   if(pc.length&&Math.max(r,g,b)-Math.min(r,g,b)>=40){let bd=COLOR_TOL*COLOR_TOL;for(let q=0;q<pc.length;q++){const e=(r-pc[q][0])**2+(g-pc[q][1])**2+(b-pc[q][2])**2;if(e<bd){bd=e;m=q+1}}}
+   if(m){land[i]=1;map[i]=m;totalLand++}else if((r+g+b)/3>=LAND_T){land[i]=1;totalLand++}}
+  comp=new Uint32Array(N);bq=new Int32Array(N);par=new Int32Array(N);vis=new Uint32Array(N);
+  let cid=0;
+  for(let i=0;i<N;i++)if(!land[i]&&!comp[i]){cid++;let sp=0;bq[sp++]=i;comp[i]=cid;
+   while(sp){const c=bq[--sp],x=c%W;
+    if(x>0&&!land[c-1]&&!comp[c-1]){comp[c-1]=cid;bq[sp++]=c-1}
+    if(x<W-1&&!land[c+1]&&!comp[c+1]){comp[c+1]=cid;bq[sp++]=c+1}
+    if(c>=W&&!land[c-W]&&!comp[c-W]){comp[c-W]=cid;bq[sp++]=c-W}
+    if(c<N-W&&!land[c+W]&&!comp[c+W]){comp[c+W]=cid;bq[sp++]=c+W}}}
+  imgData=new ImageData(W,H);px32=new Uint32Array(imgData.data.buffer);
+  off=document.createElement('canvas');off.width=W;off.height=H;octx=off.getContext('2d');
+  resize();res(map)};
+ im.src=file})}
 function resetPix(){for(let i=0;i<N;i++)px32[i]=land[i]?LANDC:OCEAN;dirty=true}
 function resize(){cv.width=innerWidth;cv.height=innerHeight;if(W){z=Math.min(cv.width/W,cv.height/H);px=(cv.width-W*z)/2;py=(cv.height-H*z)/2}}
 addEventListener('resize',resize);
 /* ---- NATIONS ---- */
 function hsl(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))))};return[f(0),f(8),f(4)]}
-function recalc(n){const M={};for(const k in KN){let v=1;for(const t of TECH)if(t.k===k)v+=t.p*(n.tl[t.id]||0);for(const id of n.ideo)v+=IDEO.find(x=>x.id===id).m[k]||0;if(k==='res')v+=.25*n.b.univ;M[k]=Math.max(.2,v)}n.M=M}
+function recalc(n){const M={};for(const k in KN){let v=1+(n.fm[k]||0);for(const t of TECH)if(t.k===k)v+=t.p*(n.tl[t.id]||0);for(const id of n.ideo)v+=IDEO.find(x=>x.id===id).m[k]||0;if(k==='res')v+=.25*n.b.univ;M[k]=Math.max(.2,v)}n.M=M}
 function mk(o){
  const id=nations.length,cu=pick(CUL),sh=o.short||cap(pick(cu.r)+pick(cu.s));
- const col=o.color?[1,3,5].map(k=>parseInt(o.color.substr(k,2),16)):hsl((id*137.5)%360,.55+Math.random()*.2,.5);
+ const col=o.color?[1,3,5].map(k=>parseInt(o.color.substr(k,2),16)):hsl((id*137.5)%360,.6+Math.random()*.25,.36+Math.random()*.12);
  const n={id,short:sh,name:o.name||pick(TITLES)+' '+sh,leader:o.leader||pick(cu.f)+' '+pick(cu.l),flag:o.flag||pick(FLAGS),col,bot:!!o.bot,
-  troops:2500,gold:200,tiles:0,list:[],sx:0,sy:0,alive:true,na:0,ships:0,hex:`rgb(${col})`,tl:{},ideo:[],res:null,b:{factory:0,mine:0,port:0,barracks:0,univ:0}};
+  troops:o.troops??2500,gold:o.gold??200,tiles:0,list:[],sx:0,sy:0,alive:true,na:0,ships:0,hex:`rgb(${col})`,tl:{},ideo:[],res:null,
+  b:{factory:0,mine:0,port:0,barracks:0,univ:0},fm:{},focuses:o.focuses||[],fdone:new Set,focus:null};
  n.fi=new Image();n.fi.src=n.flag;recalc(n);nations.push(n);return n}
 function paint(i){
  const o=owner[i];
  if(!o){px32[i]=land[i]?LANDC:OCEAN;return}
  const c=nations[o].col;let r=c[0],g=c[1],b=c[2];
- if(ftm[i]){let t=(now-ftm[i])/FD;if(t>=1){ftm[i]=0}else{const k=.7*(1-t*t*(3-2*t));r+=(255-r)*k;g+=(255-g)*k;b+=(255-b)*k}}
+ if(ftm[i]){let t=(now-ftm[i])/FD;if(t>=1){ftm[i]=0}else{const k=.55*(1-t*t*(3-2*t));r+=(255-r)*k;g+=(255-g)*k;b+=(255-b)*k}}
  const x=i%W;
  if((x>0&&owner[i-1]&&owner[i-1]!==o)||(x<W-1&&owner[i+1]&&owner[i+1]!==o)||(i>=W&&owner[i-W]&&owner[i-W]!==o)||(i<N-W&&owner[i+W]&&owner[i+W]!==o)){
   const l=.3*r+.59*g+.11*b,t2=l>110?0:255;r+=(t2-r)*.65;g+=(t2-g)*.65;b+=(t2-b)*.65}
  px32[i]=(255<<24)|((b|0)<<16)|((g|0)<<8)|(r|0)}
 function paintN(i){paint(i);const x=i%W;if(x>0)paint(i-1);if(x<W-1)paint(i+1);if(i>=W)paint(i-W);if(i<N-W)paint(i+W);dirty=true}
 function setOwner(i,id,anim){
- const bb=bmap.get(i);if(bb)rmB(bb);
+ const bb=bmap.get(i);if(bb&&bb.o!==id){const po=nations[bb.o],pn=nations[id];po.b[bb.t]--;pn.b[bb.t]++;bb.o=id;recalc(po);recalc(pn);if(po===player)msg('Lost a '+BT[bb.t].n+' to '+pn.short)}
  const old=owner[i];if(old){const o=nations[old];o.tiles--;o.sx-=i%W;o.sy-=(i/W)|0}
  owner[i]=id;const n=nations[id];n.tiles++;n.list.push(i);n.sx+=i%W;n.sy+=(i/W)|0;
  if(anim){ftm[i]=now;fq.push(i);ft.push(now)}else ftm[i]=0;
@@ -156,27 +189,62 @@ function build(n,ty,i){
  if(ty==='port'){let ok=false;for(let dy=-2;dy<=2&&!ok;dy++)for(let dx=-2;dx<=2;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<W&&Y<H&&!land[Y*W+X]){ok=true;break}}if(!ok)return'Ports must be built on the coast'}
  n.gold-=bcost(n,ty);const b={t:ty,i,x,y,o:n.id};blds.push(b);bmap.set(i,b);n.b[ty]++;recalc(n);return true}
 function rmB(b){blds.splice(blds.indexOf(b),1);bmap.delete(b.i);const n=nations[b.o];n.b[b.t]--;recalc(n);if(n===player)msg('Your '+BT[b.t].n+' was destroyed')}
-/* ---- RESEARCH ---- */
-function items(n){const o=[],last=n.ideo[n.ideo.length-1];
- for(const t of TECH){const l=n.tl[t.id]||0;if(l<3)o.push({kind:'tech',id:t.id,name:`${t.n} ${l+1}`,cost:300*(l+1),time:25*(l+1)})}
- for(const x of IDEO)if(last?x.r===last:x.t===1)o.push({kind:'ideo',id:x.id,name:x.n,cost:400*x.t,time:40*x.t});return o}
-function startRes(n,it){if(n.res||n.gold<it.cost)return false;n.gold-=it.cost;n.res={kind:it.kind,id:it.id,name:it.name,left:it.time,total:it.time};return true}
-function research(kind,id){const it=items(player).find(x=>x.kind===kind&&x.id===id);if(!it||phase!=='play')return;
+/* ---- RESEARCH / IDEOLOGY / FOCUS ---- */
+function items(n){const o=[];for(const t of TECH){const l=n.tl[t.id]||0;if(l<3)o.push({id:t.id,name:`${t.n} ${l+1}`,cost:300*(l+1),time:25*(l+1)})}return o}
+function startRes(n,it){if(n.res||n.gold<it.cost)return false;n.gold-=it.cost;n.res={id:it.id,name:it.name,left:it.time,total:it.time};return true}
+function research(id){const it=items(player).find(x=>x.id===id);if(!it||phase!=='play')return;
  if(player.res)return msg('Already researching something',false);if(player.gold<it.cost)return msg('Not enough gold',false);startRes(player,it);techUI();hud()}
+/* ideology: instant, gold only */
+function canAdopt(n,x){return n.ideo[n.ideo.length-1]!==x.id&&(x.t===1||n.ideo.includes(x.r))}
+function adopt(n,x){if(!canAdopt(n,x)||n.gold<400*x.t)return false;const ch=[];for(let y=x;y;y=y.r?IDEO.find(q=>q.id===y.r):null)ch.unshift(y.id);n.gold-=400*x.t;n.ideo=ch;recalc(n);return true}
+function adoptUI(id){if(phase!=='play')return;const x=IDEO.find(q=>q.id===id);if(!adopt(player,x))return msg('Cannot adopt ('+400*x.t+'g needed)',false);msg('Ideology adopted: '+x.n,false);techUI();hud()}
+/* national focus */
+function focusAvail(n,k){if(n.fdone.has(k))return false;const fc=n.focuses[k],req=fc.req?fc.req.map(id=>n.focuses.findIndex(f=>f.id===id)):(k?[k-1]:[]);return req.every(r=>r>=0&&n.fdone.has(r))}
+function startFocus(n,k){const fc=n.focuses[k];if(n.focus||!focusAvail(n,k)||n.gold<(fc.cost||0))return false;n.gold-=fc.cost||0;n.focus={k,left:fc.time||30,total:fc.time||30};return true}
+function startFocusUI(k){if(phase!=='play')return;if(!startFocus(player,k))msg('Cannot start (busy or not enough gold)',false);techUI();hud()}
+function annex(n,t){
+ if(!t||!t.alive||t===n)return;
+ for(const a of attacks.slice())if(a.o===t.id||a.t===t.id)endAttack(a);
+ for(const i of t.list.slice())if(owner[i]===t.id)setOwner(i,n.id,true);
+ n.gold+=t.gold;n.troops+=t.troops;t.gold=0;t.troops=0;t.alive=false;
+ msg(`${n.short} annexed ${t.short}`,true);if(t===player){phase='over';msg('You have been annexed.')}}
+function finishFocus(n){
+ const k=n.focus.k,fc=n.focuses[k];n.focus=null;n.fdone.add(k);
+ for(const e of fc.effects||[]){
+  if(e.type==='gold')n.gold+=e.amount;else if(e.type==='troops')n.troops+=e.amount;
+  else if(e.type==='annex')annex(n,byId[e.target]);
+  else if(e.type==='buff'){n.fm[e.key]=(n.fm[e.key]||0)+e.value;recalc(n)}}
+ if(fc.run)fc.run(n,{nations,byId,annex});
+ if(n===player)msg('National focus complete: '+fc.name)}
 function resTick(n){
- if(n.res){n.res.left-=n.M.res;if(n.res.left<=0){const r=n.res;n.res=null;if(r.kind==='tech')n.tl[r.id]=(n.tl[r.id]||0)+1;else n.ideo.push(r.id);recalc(n);if(n===player)msg('Research complete: '+r.name)}}
- else if(n.bot&&Math.random()<.15){const o=items(n).filter(x=>x.cost<=n.gold*.7);if(o.length)startRes(n,pick(o))}}
+ if(n.res){n.res.left-=n.M.res;if(n.res.left<=0){const r=n.res;n.res=null;n.tl[r.id]=(n.tl[r.id]||0)+1;recalc(n);if(n===player)msg('Research complete: '+r.name)}}
+ else if(n.bot&&Math.random()<.15){const o=items(n).filter(x=>x.cost<=n.gold*.7);if(o.length)startRes(n,pick(o))}
+ if(n.focus){n.focus.left-=1;if(n.focus.left<=0)finishFocus(n)}
+ else if(n.bot&&n.focuses.length&&Math.random()<.3){for(let k=0;k<n.focuses.length;k++)if(focusAvail(n,k)&&startFocus(n,k))break}
+ if(n.bot&&Math.random()<.05){const o=IDEO.filter(x=>canAdopt(n,x)&&800*x.t<=n.gold);if(o.length)adopt(n,pick(o))}}
 /* ---- START ---- */
-function startGame(){
- snd('start');$('menu').style.display='none';nations.length=1;owner.fill(0);ftm.fill(0);resetPix();attacks=[];ships=[];blds=[];bmap.clear();fq=[];ft=[];fh=0;won=false;
- const nm=$('nm').value.trim()||'Player Nation';
- player=mk({name:nm,short:nm.replace(/^(Kingdom|Republic|Duchy|Empire|Principality|Grand Duchy|Commonwealth) of /,'')});
- for(const p of PRESET_NATIONS){const n=mk({...p,bot:true});for(const[x,y,r]of p.regions||[])spawn(n,x,y,r)}
- const nb=Math.max(0,Math.min(120,+$('nb').value||0));
- for(let k=0;k<nb;k++){const n=mk({bot:true});
-  for(let t=0;t<400&&n.tiles<40;t++){const i=(Math.random()*N)|0,x=i%W,y=(i/W)|0;if(land[i]&&!owner[i]&&freeSpot(x,y,30))spawn(n,x,y,9)}
-  if(n.tiles<20)n.alive=false}
- phase='spawn';cv.style.cursor='crosshair';$('hud').classList.remove('hide');hud();msg('Click on land to choose your starting location',false)}
+async function startGame(){
+ snd('start');const pre=$('mode').value==='pre',cfg=pre?MAPS[$('mapsel').value]:null,go=$('go'),fail=m=>{$('err').textContent=m;go.disabled=false;go.textContent='Start'};
+ if(pre&&!cfg.nations.length)return fail('No nations are configured for this map yet (see MAPS in the code).');
+ go.disabled=true;go.textContent='Loading map...';$('err').textContent='';
+ let map;try{map=await loadMap(cfg?cfg.file:MAP,cfg?cfg.nations:[])}catch(e){return fail(e)}
+ nations.length=1;resetPix();attacks=[];ships=[];blds=[];bmap.clear();fq=[];ft=[];fh=0;won=false;byId={};
+ if(pre){
+  const pn=cfg.nations.map(p=>{const n=mk({...p,bot:true});byId[p.id]=n;return n});
+  for(let i=0;i<N;i++)if(map[i])setOwner(i,pn[map[i]-1].id,false);
+  for(const n of pn)if(!n.tiles)n.alive=false;
+  player=pn[+$('plsel').value];
+  if(!player.alive)return fail('That nation has no pixels of its color in the map image.');
+  player.bot=false;phase='play';$('bar').classList.remove('hide');msg('Nation focuses are in the Research menu.',false)}
+ else{
+  const nm=$('nm').value.trim()||'Player Nation';
+  player=mk({name:nm,short:nm.replace(/^(Kingdom|Republic|Duchy|Empire|Principality|Grand Duchy|Commonwealth) of /,''),flag:$('fu').value.trim()||pflag});
+  const nb=Math.max(0,Math.min(120,+$('nb').value||0));
+  for(let k=0;k<nb;k++){const n=mk({bot:true});
+   for(let t=0;t<400&&n.tiles<40;t++){const i=(Math.random()*N)|0,x=i%W,y=(i/W)|0;if(land[i]&&!owner[i]&&freeSpot(x,y,30))spawn(n,x,y,9)}
+   if(n.tiles<20)n.alive=false}
+  phase='spawn';cv.style.cursor='crosshair';msg('Click on land to choose your starting location',false)}
+ $('menu').style.display='none';$('hud').classList.remove('hide');hud()}
 /* ---- COMBAT ---- */
 function seedFront(n,tid,click){
  const L=n.list,pool=new Set,cx=click%W,cy=(click/W)|0,tries=Math.min(6000,L.length*2);
@@ -197,30 +265,33 @@ function launch(n,tid,tr,click,seed,paid){
  n.na++;if(tid&&tid===player.id&&n!==player)msg(n.short+' is attacking you!')}
 function endAttack(a){const n=nations[a.o];n.troops+=Math.max(0,a.troops);n.na--;const k=attacks.indexOf(a);if(k>=0)attacks.splice(k,1)}
 /* Wars: if two nations fight, each side's power = committed troops + 25% of reserves. Only the side with MORE power advances; the weaker side bleeds. */
+const pwS=new Map,rsv=[];
+const PW=(o,t)=>(pwS.get(o*65536+t)||0)+(rsv[o]||0);   // snapshot taken at tick start so both sides see identical numbers
+function nbc(i,id){const x=i%W;return(x>0&&owner[i-1]===id)+(x<W-1&&owner[i+1]===id)+(i>=W&&owner[i-W]===id)+(i<N-W&&owner[i+W]===id)}
+/* Only the nation with higher total war power (all its attacks on that nation + 25% reserves) advances; the other side stalls and bleeds. */
 function stepAttack(a){
  const n=nations[a.o],d=a.t?nations[a.t]:null;
  if(!n.alive||(d&&!d.alive)||a.troops<5){endAttack(a);return}
  let rate=1,ct=null;
  if(d){ct=attacks.find(b=>b.o===a.t&&b.t===a.o);
-  const own=a.troops+n.troops*.25*n.M.def,their=(ct?ct.troops:0)+d.troops*.25*d.M.def;
+  const own=PW(a.o,a.t),their=PW(a.t,a.o);
   if(own<=their){if(!ct){a.troops*=.97;d.troops=Math.max(0,d.troops-a.troops*.012)}return}
   rate=Math.min(1.5,.25+(own/(their+1)-1)*1.2)}
- let per=Math.ceil((3+Math.sqrt(a.troops)*.45)*rate);
+ const st=[];let per=Math.ceil((3+Math.sqrt(a.troops)*.45)*rate);
  while(per-->0){
-  if(a.h>=a.q.length){a.q=seedFront(n,a.t,a.click);a.h=0;if(!a.q.length){endAttack(a);return}}
-  const i=a.q[a.h++];
-  if(a.h>4000&&a.h*2>a.q.length){a.q=a.q.slice(a.h);a.h=0}
-  if(owner[i]!==a.t||!land[i])continue;
-  const x=i%W;
-  if(!((x>0&&owner[i-1]===n.id)||(x<W-1&&owner[i+1]===n.id)||(i>=W&&owner[i-W]===n.id)||(i<N-W&&owner[i+W]===n.id)))continue;
+  let i;
+  if(st.length)i=st.pop();
+  else{if(a.h>=a.q.length){a.q=seedFront(n,a.t,a.click);a.h=0;if(!a.q.length){endAttack(a);return}}
+   i=a.q[a.h++];if(a.h>4000&&a.h*2>a.q.length){a.q=a.q.slice(a.h);a.h=0}}
+  if(owner[i]!==a.t||!land[i]||!nbc(i,n.id))continue;
   const dens=d?d.troops/Math.max(d.tiles,1)*d.M.def:0,cost=(d?2+dens*.45:1.3)/n.M.atk;
   if(a.troops<cost){endAttack(a);return}
   a.troops-=cost;
-  if(d){const l=cost*.6;if(ct)ct.troops=Math.max(0,ct.troops-l);else d.troops=Math.max(0,d.troops-l)}
+  if(d){const l=cost*.6;if(ct&&ct.troops>0)ct.troops=Math.max(0,ct.troops-l);else d.troops=Math.max(0,d.troops-l)}
   setOwner(i,n.id,true);
-  const y=(i/W)|0;a.cx+=(x-a.cx)*.03;a.cy+=(y-a.cy)*.03;a.c2x+=(x-a.c2x)*.004;a.c2y+=(y-a.c2y)*.004;
-  if(x>0&&owner[i-1]===a.t)a.q.push(i-1);if(x<W-1&&owner[i+1]===a.t)a.q.push(i+1);
-  if(i>=W&&owner[i-W]===a.t)a.q.push(i-W);if(i<N-W&&owner[i+W]===a.t)a.q.push(i+W);
+  const x=i%W,y=(i/W)|0;a.cx+=(x-a.cx)*.03;a.cy+=(y-a.cy)*.03;a.c2x+=(x-a.c2x)*.004;a.c2y+=(y-a.c2y)*.004;
+  for(const j of[x>0?i-1:-1,x<W-1?i+1:-1,i>=W?i-W:-1,i<N-W?i+W:-1])
+   if(j>=0&&owner[j]===a.t&&land[j]){if(nbc(j,n.id)>=3)st.push(j);else a.q.push(j)}   // pockets surrounded by us are filled immediately
   if(d&&d.tiles<=0){eliminate(d,n);endAttack(a);return}}}
 function eliminate(d,n){
  d.alive=false;n.gold+=d.gold*.5;d.gold=0;
@@ -264,13 +335,18 @@ function sendShip(n,tile,ratio,pl){
  if(pl)msg('Ship launched',false);return true}
 function posAt(s,d){let k=0;while(k<s.xy.length-2&&s.cum[k+1]<d)k++;const a=s.xy[k],b=s.xy[k+1]||a,sl=(s.cum[k+1]-s.cum[k])||1,f=Math.max(0,Math.min(1,(d-s.cum[k])/sl));
  return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,a:Math.atan2(b.y-a.y,b.x-a.x)}}
-function stepShip(s){
- s.pos+=s.v;const n=nations[s.o];
- if(s.pos<s.len)return true;
- n.ships--;if(!n.alive)return false;
- const t=owner[s.L];
- if(t===n.id)n.troops+=s.troops;else{launch(n,t,s.troops,s.L,[s.L],true);if(n===player)msg('Your troops have landed')}
- return false}
+function stepShip(s){s.pos+=s.v;const n=nations[s.o];if(s.pos<s.len)return true;n.ships--;if(n.alive)landing(n,s);return false}
+/* Landing: capture a beachhead on the target coast first, then expand outward from it */
+function landing(n,s){
+ const L=s.L,t=owner[L];
+ if(t===n.id){n.troops+=s.troops;return}
+ const d=t?nations[t]:null,x0=L%W,y0=(L/W)|0,got=[],seed=[];
+ for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){if(dx*dx+dy*dy>9)continue;const X=x0+dx,Y=y0+dy;if(X<0||Y<0||X>=W||Y>=H)continue;
+  const i=Y*W+X;if(land[i]&&owner[i]===t){setOwner(i,n.id,true);got.push(i)}}
+ if(n===player)msg('Your troops have landed');
+ if(d&&d.tiles<=0){eliminate(d,n);n.troops+=s.troops;return}
+ for(const g of got){const x=g%W;for(const j of[x>0?g-1:-1,x<W-1?g+1:-1,g>=W?g-W:-1,g<N-W?g+W:-1])if(j>=0&&land[j]&&owner[j]===t)seed.push(j)}
+ if(seed.length)launch(n,t,s.troops,L,seed,true);else n.troops+=s.troops}
 /* ---- BOT AI ---- */
 function ai(n){
  if(Math.random()<.25&&n.list.length){const ty=pick(Object.keys(BT));if(n.gold>bcost(n,ty)*1.3)for(let k=0;k<15;k++){const i=n.list[(Math.random()*n.list.length)|0];if(owner[i]===n.id&&build(n,ty,i)===true)break}}
@@ -285,7 +361,7 @@ function ai(n){
   for(let t=0;t<60;t++){const i=(Math.random()*N)|0;if(land[i]&&owner[i]!==n.id){sendShip(n,i,.3,false);break}}}}
 /* ---- TICK ---- */
 function tick(){
- tickN++;
+ tickN++;pwS.clear();for(const a of attacks)pwS.set(a.o*65536+a.t,(pwS.get(a.o*65536+a.t)||0)+a.troops);for(const n of nations)if(n)rsv[n.id]=n.troops*.25*n.M.def;
  for(const a of attacks.slice())if(attacks.includes(a))stepAttack(a);
  ships=ships.filter(stepShip);
  for(const n of nations){if(n&&n.alive&&n.bot&&(tickN+n.id)%30===0)ai(n)}
@@ -308,7 +384,7 @@ function hud(){
  <div class="row"><span>Economy</span><span>${f(n.gold)} (+${inc(n).toFixed(1)}/s)</span></div>
  <div class="row"><span>Territory</span><span>${f(n.tiles)} (${(n.tiles/totalLand*100).toFixed(1)}%)</span></div>
  <div class="row"><span>Ideology</span><span>${ideoName(n)}</span></div>
- <div class="row"><span>Research</span><span>${n.res?n.res.name+' '+Math.round((1-n.res.left/n.res.total)*100)+'%':'Idle'}</span></div>`}
+ <div class="row"><span>Research</span><span>${n.res?n.res.name+' '+Math.round((1-n.res.left/n.res.total)*100)+'%':'Idle'}</span></div>${n.focuses.length?`<div class='row'><span>Focus</span><span>${n.focus?n.focuses[n.focus.k].name+' '+Math.round((1-n.focus.left/n.focus.total)*100)+'%':'Idle'}</span></div>`:''}`}
 function showInfo(i,silent){
  sel=i;const o=owner[i],n=o?nations[o]:null,p=$('info');
  let h=n?`<span class="fl" style="${flagStyle(n)};width:64px;height:40px"></span><h3>${n.name}</h3><div class="sub">Leader: ${n.leader}</div><div class="por"></div>
@@ -331,15 +407,30 @@ function togg(id){if(phase!=='play')return;const e=$(id),open=e.classList.contai
 function bldUI(){$('bld').innerHTML='<h3>Construct</h3><div class="sub" style="margin-bottom:6px">Then click your territory. Buildings need '+MIND+'+ tiles of spacing, so more land = more buildings.</div>'+
  Object.keys(BT).map(k=>`<div class="row r"><span><img class="ic" src="${IURL(k)}"> ${BT[k].n} <span class="sub">${BT[k].d} (own ${player.b[k]})</span></span><button onclick="setB('${k}')">${bcost(player,k)}g</button></div>`).join('')}
 function setB(k){bmode=k;$('bld').classList.add('hide');cv.style.cursor='crosshair';msg('Click your territory to place a '+BT[k].n+' (Esc to cancel)',false)}
+let tab='tech';
+function setTab(k){tab=k;techUI()}
+const modHTML=m=>Object.entries(m).map(([k,v])=>`<div style="font-size:13px;color:${v>0?'#8d8':'#e88'}">${v>0?'+':''}${Math.round(v*100)}% ${KN[k]}</div>`).join('');
+const progCard=(label,left,total,sub)=>`<div class="card" style="margin-bottom:8px"><div class="row r"><b>${label}</b><span class="sub">${sub}</span></div><div class="pb"><i style="width:${(1-left/total)*100}%"></i></div></div>`;
 function techUI(){
- const n=player;let h='<h3>Research</h3>';
- h+=n.res?`<div class="sub">${n.res.name} - ${Math.ceil(n.res.left/n.M.res)}s left</div><div class="pb"><i style="width:${(1-n.res.left/n.res.total)*100}%"></i></div>`:'<div class="sub" style="margin-bottom:6px">Idle. One research at a time; Universities speed it up.</div>';
- h+=TECH.map(t=>{const l=n.tl[t.id]||0;return`<div class="row r"><span>${t.n} <span class="sub">Lv ${l}/3 - ${KN[t.k]} +${Math.round(t.p*100)}%/lv</span></span>${l<3?`<button onclick="research('tech','${t.id}')">${300*(l+1)}g / ${25*(l+1)}s</button>`:'<span class="sub">Max</span>'}</div>`}).join('');
- h+='<h3 style="margin-top:12px">Ideology</h3><div class="sub" style="margin-bottom:6px">Pick a path; each step adds buffs and drawbacks.</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
- const av=items(n);
- for(let p=0;p<3;p++)h+='<div>'+IDEO.filter(x=>x.p===p).map(x=>{const own=n.ideo.includes(x.id),a=av.find(it=>it.id===x.id);
-  return`<div style="margin-bottom:10px;opacity:${own||a?1:.4}"><b>${x.n}</b> ${own?'(active)':''}<div class="sub" style="margin:2px 0 4px">${modText(x.m)}</div>${a?`<button onclick="research('ideo','${x.id}')">${a.cost}g / ${a.time}s</button>`:''}</div>`}).join('')+'</div>';
- $('tech').innerHTML=h+'</div>'}
+ const n=player;if(tab==='focus'&&!n.focuses.length)tab='tech';
+ const tb=(k,l)=>`<button style="${tab===k?'background:#2c2c2c':''}" onclick="setTab('${k}')">${l}</button>`;
+ let h=`<div style="display:flex;gap:6px;margin-bottom:10px">${tb('tech','Technologies')}${tb('ideo','Ideology')}${n.focuses.length?tb('focus','National Focus'):''}</div>`;
+ if(tab==='tech'){
+  h+=n.res?progCard(n.res.name,n.res.left,n.res.total,Math.ceil(n.res.left/n.M.res)+'s left'):'<div class="card sub" style="margin-bottom:8px">No active research. One technology at a time.</div>';
+  h+='<div class="grid">'+TECH.map(t=>{const l=n.tl[t.id]||0,c=300*(l+1);
+   return`<div class="card"><div class="row r"><b>${t.n}</b><span>${'●'.repeat(l)}${'○'.repeat(3-l)}</span></div><div class="sub" style="margin:4px 0 8px">${KN[t.k]} +${Math.round(t.p*100)}% per level</div>${l<3?`<button class="${n.res||n.gold<c?'dis':''}" onclick="research('${t.id}')">Research · ${c}g · ${25*(l+1)}s</button>`:'<div class="sub">Maxed</div>'}</div>`}).join('')+'</div>'}
+ else if(tab==='ideo'){
+  h+=`<div class="sub" style="margin-bottom:8px">Current: <b style="color:#fff">${ideoName(n)}</b>. Changing is instant and costs gold only. Higher tiers need the previous step of the same path.</div><div class="grid3">`;
+  for(let p=0;p<3;p++){h+='<div>';for(const x of IDEO.filter(q=>q.p===p)){
+   const act=n.ideo[n.ideo.length-1]===x.id,inp=n.ideo.includes(x.id)&&!act,can=canAdopt(n,x),c=400*x.t;
+   h+=`<div class="card" style="margin-bottom:8px;opacity:${can||act||inp?1:.4};${act?'background:#17261c':''}"><div class="sub">Tier ${x.t}</div><b>${x.n}</b><div style="margin:4px 0 8px">${modHTML(x.m)}</div>${act?'<div class="sub">Active</div>':inp?'<div class="sub">In path</div>':can?`<button class="${n.gold<c?'dis':''}" onclick="adoptUI('${x.id}')">Adopt · ${c}g</button>`:'<div class="sub">Locked</div>'}</div>`}
+   h+='</div>'}
+  h+='</div>'}
+ else{
+  h+=n.focus?progCard(n.focuses[n.focus.k].name,n.focus.left,n.focus.total,Math.ceil(n.focus.left)+'s left'):'<div class="card sub" style="margin-bottom:8px">No active focus. One at a time.</div>';
+  h+=n.focuses.map((fc,k)=>{const done=n.fdone.has(k),av=focusAvail(n,k);
+   return`<div class="card" style="margin-bottom:8px;opacity:${done||av?1:.45}"><div class="row r"><span><span class="sub">Stage ${k+1}</span> <b>${fc.name}</b></span>${done?'<span class="sub">Completed</span>':av?`<button class="${n.focus||n.gold<(fc.cost||0)?'dis':''}" onclick="startFocusUI(${k})">Start · ${fc.cost||0}g · ${fc.time||30}s</button>`:'<span class="sub">Locked</span>'}</div><div class="sub">${fc.desc||''}</div></div>`}).join('')}
+ $('tech').innerHTML=h}
 $('rt').oninput=e=>$('rv').textContent=e.target.value+'%';
 /* ---- INPUT ---- */
 let drag=null;
@@ -404,4 +495,13 @@ function loop(t){
  if(phase==='play'){acc=Math.min(acc+dt*speed,600);while(acc>=100){acc-=100;tick()}}
  fade();draw();requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
+/* ---- MENU ---- */
+$('flags').innerHTML=FC.map(c=>`<div class="fp" data-u="${flagUrl(c)}" style="background-image:url(${flagUrl(c)})"></div>`).join('');
+$('flags').firstChild.classList.add('sel');
+$('flags').onclick=e=>{const t=e.target.closest('.fp');if(!t)return;pflag=t.dataset.u;for(const k of $('flags').children)k.classList.toggle('sel',k===t);snd('click')};
+$('mapsel').innerHTML=Object.keys(MAPS).map(k=>`<option value="${k}">${MAPS[k].label}</option>`).join('');
+function fillPl(){$('plsel').innerHTML=MAPS[$('mapsel').value].nations.map((p,k)=>`<option value="${k}">${p.name||p.short}</option>`).join('')}
+$('mapsel').onchange=fillPl;fillPl();
+$('mode').onchange=()=>{const p=$('mode').value==='pre';$('randopts').style.display=p?'none':'';$('preopts').style.display=p?'':'none'};
+$('go').onclick=startGame;phase='menu';
 </script></body></html>
