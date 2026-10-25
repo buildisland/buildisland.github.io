@@ -244,7 +244,7 @@ function snd(k){try{const a=AU[k].cloneNode();a.volume=.5;a.play().catch(()=>{})
 document.addEventListener('click',e=>{if(e.target.closest('button'))snd('click')});
 function msg(t,s=true){const d=document.createElement('div');d.className='m';d.textContent=t;$('feed').appendChild(d);setTimeout(()=>d.remove(),6000);if(s)snd('msg')}
 /* ---- LOAD MAP ---- */
-const COLOR_TOL=90;  // how far (RGB distance) a pixel may be from a nation color and still count (JPEG blur)
+const COLOR_TOL=40;  // pixels this close (RGB distance) to a nation color are certain; blurry edge pixels are decided by their neighbours
 function loadMap(file,pre){return new Promise((res,rej)=>{
  const im=new Image();im.onerror=()=>rej('Could not load '+file+'. Put it next to this HTML file.');
  im.onload=()=>{
@@ -253,9 +253,18 @@ function loadMap(file,pre){return new Promise((res,rej)=>{
   let d;try{d=c.getImageData(0,0,W,H).data}catch(e){return rej('Browser blocked pixel reading (file:// restriction). Run a local server in this folder: "python -m http.server" and open http://localhost:8000/game.html')}
   land=new Uint8Array(N);owner=new Uint16Array(N);ftm=new Float64Array(N);totalLand=0;
   const map=new Uint8Array(N),pc=pre.map(p=>[1,3,5].map(k=>parseInt(p.color.substr(k,2),16)));
-  for(let i=0;i<N;i++){const k=i*4,r=d[k],g=d[k+1],b=d[k+2];let m=0;
-   if(pc.length&&Math.max(r,g,b)-Math.min(r,g,b)>=40){let bd=COLOR_TOL*COLOR_TOL;for(let q=0;q<pc.length;q++){const e=(r-pc[q][0])**2+(g-pc[q][1])**2+(b-pc[q][2])**2;if(e<bd){bd=e;m=q+1}}}
-   if(m){land[i]=1;map[i]=m;totalLand++}else if((r+g+b)/3>=LAND_T){land[i]=1;totalLand++}}
+  const amb=[];
+  for(let i=0;i<N;i++){const k=i*4,r=d[k],g=d[k+1],b=d[k+2],white=r>=215&&g>=215&&b>=215;let m=0,bd=COLOR_TOL*COLOR_TOL;
+   if(pc.length&&!white)for(let q=0;q<pc.length;q++){const e=(r-pc[q][0])**2+(g-pc[q][1])**2+(b-pc[q][2])**2;if(e<bd){bd=e;m=q+1}}
+   if(m){land[i]=1;map[i]=m;totalLand++}
+   else if((r+g+b)/3>=LAND_T){land[i]=1;totalLand++;if(pc.length&&!white)amb.push(i)}
+   else if(pc.length&&Math.max(r,g,b)-Math.min(r,g,b)>=40)amb.push(i)}
+  /* blurry edge pixels: vote among certain pixels within 3px, majority wins (decided from a snapshot, so no order bias) */
+  const cnt=new Int32Array(pc.length+1),asg=new Uint8Array(amb.length);
+  amb.forEach((i,a)=>{const x=i%W,y=(i/W)|0;cnt.fill(0);let best=0,bn=0;
+   for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=H)continue;const m=map[Y*W+X];if(m&&++cnt[m]>bn){bn=cnt[m];best=m}}
+   asg[a]=best});
+  amb.forEach((i,a)=>{if(asg[a]){map[i]=asg[a];if(!land[i]){land[i]=1;totalLand++}}});
   comp=new Uint32Array(N);bq=new Int32Array(N);par=new Int32Array(N);vis=new Uint32Array(N);
   let cid=0;
   for(let i=0;i<N;i++)if(!land[i]&&!comp[i]){cid++;let sp=0;bq[sp++]=i;comp[i]=cid;
