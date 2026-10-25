@@ -60,17 +60,146 @@ const FLAGS=FC.map(flagUrl);let pflag=FLAGS[0],byId={};
  Effect types: {type:'gold',amount} {type:'troops',amount} {type:'annex',target:'<nation id>'} {type:'buff',key,value}
    buff keys: inc reg max ship atk def res  (value .15 = +15%)
  The colors below are PLACEHOLDERS: change them to the exact colors used in your image. */
-const MAPS={
- y2026:{label:'Europe 2026 [BETA]',file:'Europemap_wpresetcountries.jpg',nations:[
-  {id:'germany',name:'Federal Republic of Germany',short:'Germany',leader:'Friedrich Merz',flag:flagUrl('de'),color:'#ff0000',troops:20000,gold:1500,focuses:[
-   {id:'industry',name:'Start Industrializing',desc:'Gain 500 gold.',time:60,effects:[{type:'gold',amount:500}]},
-   {id:'anschluss',name:'Anschluss',desc:'Annex Austria, taking its land, gold, manpower and buildings.',time:30,effects:[{type:'annex',target:'austria'}]},
-   {id:'rearm',name:'Rearmament',desc:'+15% max manpower.',time:45,cost:300,effects:[{type:'buff',key:'max',value:.15}]}]},
-  {id:'austria',name:'Republic of Austria',short:'Austria',leader:'Alexander Van der Bellen',flag:flagUrl('at'),color:'#ff8000',troops:8000},
-  {id:'france',name:'French Republic',short:'France',leader:'Emmanuel Macron',flag:flagUrl('fr'),color:'#0000ff',troops:18000,focuses:[
-   {name:'Trade Reforms',desc:'+12% income.',time:40,effects:[{type:'buff',key:'inc',value:.12}]}]}]},
- y1936:{label:'Europe 1936',file:'Europemap_1936.jpg',nations:[]},
- y1914:{label:'Europe 1914',file:'Europemap_1914.jpg',nations:[]}};
+const MAPS = {
+
+  y2026: {
+    label: 'Europe 2026 [BETA]',
+    file:  'Europemap_wpresetcountries.jpg',
+    nations: [
+
+      {
+        id:     'germany',
+        name:   'Federal Republic of Germany',
+        short:  'Germany',
+        leader: 'Friedrich Merz',
+        flag:   flagUrl('de'),
+        color:  '#ff0000',
+        troops: 20000,
+        gold:   1500,
+        focuses: [
+          {
+            id:   'industry',
+            name: 'Start Industrializing',
+            desc: 'Gain 500 gold.',
+            time: 60,
+            effects: [{ type: 'gold', amount: 500 }]
+          },
+          {
+            id:   'anschluss',
+            name: '2nd Anschluss',
+            desc: 'Annex Austria, taking its land, gold, manpower and buildings.',
+            time: 30,
+            effects: [{ type: 'annex', target: 'austria' }]
+          },
+          {
+            id:   'rearm',
+            name: 'Rearmament',
+            desc: '+15% max manpower.',
+            time: 45,
+            cost: 300,
+            effects: [{ type: 'buff', key: 'max', value: 0.15 }]
+          }
+        ]
+      },
+
+[
+  {
+    id:     'austria',
+    name:   'Republic of Austria',
+    short:  'Austria',
+    leader: 'Alexander Van der Bellen',
+    flag:   flagUrl('at'),
+    color:  '#ada7aa',
+    troops: 8000
+  },
+
+  {
+    id:     'liechtenstein',
+    name:   'Principality of Liechtenstein',
+    short:  'Liechtenstein',
+    leader: 'Brigitte Haas',
+    flag:   flagUrl('li'),
+    color:  '#4d8ef0',
+    troops: 1000
+  },
+
+  {
+    id:     'norway',
+    name:   'Kingdom of Norway',
+    short:  'Norway',
+    leader: 'Jonas Gahr Støre',
+    flag:   flagUrl('no'),
+    color:  '#b36268',
+    troops: 8500
+  },
+
+  {
+    id:     'sweden',
+    name:   'Kingdom of Sweden',
+    short:  'Sweden',
+    leader: 'Ulf Kristersson',
+    flag:   flagUrl('se'),
+    color:  '#51acd1',
+    troops: 11000
+  },
+
+  {
+    id:     'finland',
+    name:   'Republic of Finland',
+    short:  'Finland',
+    leader: 'Alexander Stubb',
+    flag:   flagUrl('fi'),
+    color:  '#affcff',
+    troops: 12000
+  },
+
+  {
+    id:     'iceland',
+    name:   'Republic of Iceland',
+    short:  'Iceland',
+    leader: 'Halla Tómasdóttir',
+    flag:   flagUrl('is'),
+    color:  '#81fbff',
+    troops: 1000
+  },
+
+  {
+    id:     'denmark',
+    name:   'Kingdom of Denmark',
+    short:  'Denmark',
+    leader: 'Mette Frederiksen',
+    flag:   flagUrl('dk'),
+    color:  '#e5837f',
+    troops: 8500
+  },
+
+  {
+    id:     'poland',
+    name:   'Republic of Poland',
+    short:  'Poland',
+    leader: 'Karol Nawrocki',
+    flag:   flagUrl('pl'),
+    color:  '#ff299c',
+    troops: 16000
+  },
+
+  {
+    id:     'czechia',
+    name:   'Czech Republic',
+    short:  'Czechia',
+    leader: 'Petr Pavel',
+    flag:   flagUrl('cz'),
+    color:  '#66e1ff',
+    troops: 9000
+  }
+]
+
+    ]
+  },
+
+  // y1936: { label: 'Europe 1936', file: 'Europemap_1936.jpg', nations: [] },
+ // y1914: { label: 'Europe 1914', file: 'Europemap_1914.jpg', nations: [] }
+};
 const TITLES=['Kingdom of','Republic of','Duchy of','Empire of','Principality of','Grand Duchy of','Commonwealth of'];
 const C=(r,s,f,l)=>({r:r.split(' '),s:s.split(' '),f:f.split(' '),l:l.split(' ')});
 const CUL=[
